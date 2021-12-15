@@ -6,23 +6,38 @@
 // Description : A utility for parsing a Markdown file to HTML.
 //============================================================================
 
-#include <iostream> // std::cout and std::endl
-#include <fstream> // std::ifstream and std::ofstream
+#include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
-#include <unordered_map> // std::unordered_map
-#include <map> // std::map
-#include <string> // std::string
-#include <regex> // std::regex and std::regex_search
-#include <vector> // std::vector
-#include <sstream> // std::istringstream
+#include <unordered_map>
+#include <map>
+#include <string>
+#include <regex>
+#include <vector>
+#include <sstream>
 
 using std::cout;
 using std::endl;
 
-// selects class=foo from some text [class=foo]
-//std::regex element_attr_regex("\\[([^.]*)\\]");
+// Create Regular Expressions for matching
+
+std::regex heading_regex("^#{1,6}\\s\\w+.*");
+std::smatch heading_match;
+
+std::regex heading_text_regex("\\#([^#]*)\\[");
+std::smatch heading_text_match;
+std::string matchText = "";
+
+std::regex heading_level_regex("^[\\#{1-6}]+");
+std::smatch heading_level_match;
+
+std::regex paragraph_regex("^\\w.*");
+std::smatch p_match;
+std::regex elem_line_regex("^[<]");
+std::smatch p_match_ml;
+
 std::regex element_attr_regex("\\[([^\\[]*)\\]");
 std::smatch element_attr_match;
 
@@ -92,9 +107,7 @@ std::smatch img_match;
 
 const char *trim_reg_str = " \t\n\r\f\v";
 
-// links
-// todo: [link name](url) or [link name][link definition name]
-
+// Class representing input Markdown files
 class InputFile {
 	char *path;
 	std::string raw, html;
@@ -118,8 +131,11 @@ class InputFile {
 
 struct FileData {
 	std::string raw;
-	std::vector<std::string> fvec;
 	int numberOfLines;
+	std::vector<std::string> fvec;
+	FileData* head;
+	// initialize head pointer to null in default constructor
+	FileData() : raw(""), numberOfLines(0), head(nullptr) {};
 };
 
 class FileReader {
@@ -142,7 +158,7 @@ FileData FileReader::readFile(char *filePath) {
 	if (file.is_open()) {
 		// begin reading file line by line
 		while (std::getline(file, line)) {
-			std::cout << line << std::endl;
+			cout << line << endl;
 			rawText += line + "\n";
 			numberOfLines++;
 			fileData.fvec.push_back(line);
@@ -150,8 +166,9 @@ FileData FileReader::readFile(char *filePath) {
 		// close the input file stream
 		file.close();
 	} else {
-		std::cout << "Error opening file at path: " << filePath << std::endl;
+		cout << "Error opening file at path: " << filePath << endl;
 	}
+
 	fileData.raw = rawText;
 	fileData.numberOfLines = numberOfLines;
 
@@ -199,24 +216,6 @@ int main() {
 
 	// Regular expressions for converting Markdown to HTML
 	std::cout << "Starting regex " << std::endl;
-
-	// heading elements <h1>-<h6>
-	// assuming the headings are placed at the start of each line
-	// e.g. ## Heading level 2
-	std::regex heading_regex("^#{1,6}\\s\\w+.*");
-	std::smatch heading_match;
-
-	std::regex heading_text_regex("\\#([^#]*)\\[");
-	std::smatch heading_text_match;
-	std::string matchText = "";
-
-	std::regex heading_level_regex("^[\\#{1-6}]+");
-	std::smatch heading_level_match;
-
-	std::regex paragraph_regex("^\\w.*");
-	std::smatch p_match;
-	std::regex elem_line_regex("^[<]");
-	std::smatch p_match_ml;
 
 	// use lineNum to keep track of replaced lines to ensure
 	// proper order is preserved in HTML output

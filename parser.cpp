@@ -134,7 +134,6 @@ struct FileData {
 	int numberOfLines;
 	std::vector<std::string> fvec;
 	FileData* head;
-	// initialize head pointer to null in default constructor
 	FileData() : raw(""), numberOfLines(0), head(nullptr) {};
 };
 
@@ -458,9 +457,7 @@ std::string createElement(std::unordered_map<std::string, std::string> elemMap, 
     std::vector<std::string> vecElemAttr;
     std::istringstream ss(elemMap["attributes"]);
     std::vector<std::string> elementFields;
-    std::string sk;
-    std::string sl;
-    std::string ln;
+    std::string sk, sl, ln;
     while (std::getline(ss, sl, ',')) {
         vecElemAttr.push_back(sl);
         std::istringstream sm(sl);
@@ -562,7 +559,7 @@ std::string& trim(std::string& s, const char* t)
     return ltrim(rtrim(s, t), t);
 }
 
-// Get current working directory printed to std out
+// get current working directory printed to std out
 void cwd() {
 	char *getcwd(char *buf, size_t size);
 	char cwd[256]; // 256 character limit max

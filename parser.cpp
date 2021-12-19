@@ -21,8 +21,6 @@
 using std::cout;
 using std::endl;
 
-// Create Regular Expressions for matching
-
 const char *trim_reg_str = " \t\n\r\f\v";
 
 // Class representing input Markdown files
@@ -116,7 +114,7 @@ std::string matchStr = "";
 
 int main() {
 
-	// regular expressions for matching Markdown syntax and converting it to HTML
+	// regular expressions for matching Markdown syntax
 	std::regex heading_regex("^#{1,6}\\s\\w+.*");
 	std::regex heading_text_regex("\\#([^#]*)\\[");
 	std::regex paragraph_regex("^\\w.*");
@@ -523,7 +521,7 @@ std::string& trim(std::string& s, const char* t)
     return ltrim(rtrim(s, t), t);
 }
 
-// Get current working directory printed to std out
+// get current working directory printed to std out
 void cwd() {
 	char *getcwd(char *buf, size_t size);
 	char cwd[256]; // 256 character limit max

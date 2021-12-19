@@ -46,8 +46,8 @@ struct FileData {
 	std::string raw;
 	int numberOfLines;
 	std::vector<std::string> fvec;
-	FileData* head;
-	FileData() : raw(""), numberOfLines(0), head(nullptr) {};
+	FileData* next;
+	FileData() : raw(""), numberOfLines(0), next(nullptr) {};
 };
 
 class FileReader {

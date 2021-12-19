@@ -10,6 +10,12 @@
 
 ###### h6
 
+# Hello World! [class=greeting]
+
+Happy parsing.
+
+![A cat with paws on toy sized MacBook Pro laptop pretending to type while sitting on owners lap](https://bukk.it/air.jpg)
+
 Hello, World [test](foo)
 
 This is a super short
@@ -23,7 +29,7 @@ Single line paragraph with more than one attribute [class=fizz,id=bar]
 
 > A test blockquote [class=foo,id=fi,style=background: #eee; border-left: 5px solid #f06; padding: 1rem; padding-left: 10px; margin-left: 0;]
 
-![Test Image Alt](https://bukk.it/air.jpg)
+![Llama sitting on a haystack with a fuzzy winter hat on and text saying, An Adventure? Alpaca my bags](https://bukk.it/alpaca.png)
 
 - foo
 

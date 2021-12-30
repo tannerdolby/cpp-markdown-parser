@@ -1,4 +1,4 @@
-# mdparse
+# Markdown++
 A Markdown parser written in C++ to convert input Markdown files to HTML. The parser supports setting element attributes inline within Markdown files for certain elements. Still a WIP so stay tuned :)
 
 ## Example

@@ -22,8 +22,6 @@ will be transformed to:
 <img src="https://bukk.it/air.jpg"  alt="A cat with paws on toy sized MacBook Pro laptop pretending to type while sitting on owners lap" />
 ```
 
-![Screenshot of generated HTML file displayed in web browser](https://user-images.githubusercontent.com/48612525/146152314-1a8432fb-4048-4ec4-94f6-b84b8200b16f.png)
-
 ## Usage
 Provide a input Markdown file e.g. `test.md` and run the utility to output an HTML file.
 

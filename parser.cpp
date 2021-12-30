@@ -21,8 +21,6 @@
 using std::cout;
 using std::endl;
 
-const char *trim_reg_str = " \t\n\r\f\v";
-
 // Class representing input Markdown files
 class InputFile {
 	char *path;
@@ -46,8 +44,8 @@ struct FileData {
 	std::string raw;
 	int numberOfLines;
 	std::vector<std::string> fvec;
-	FileData* next;
-	FileData() : raw(""), numberOfLines(0), next(nullptr) {};
+	FileData* head;
+	FileData() : raw(""), numberOfLines(0), head(nullptr) {};
 };
 
 class FileReader {
@@ -101,9 +99,9 @@ void InputFile::read() {
 
 // function prototypes
 void cwd();
-std::string& ltrim(std::string&, const char* = trim_reg_str);
-std::string& rtrim(std::string&, const char* = trim_reg_str);
-std::string& trim(std::string&, const char* = trim_reg_str);
+std::string& ltrim(std::string&, const char* = " \t\n\r\f\v");
+std::string& rtrim(std::string&, const char* = " \t\n\r\f\v");
+std::string& trim(std::string&, const char* = " \t\n\r\f\v");
 void setHeadingLevel(std::unordered_map<std::string, std::string>&);
 std::string createElement(std::unordered_map<std::string, std::string>&, std::string, bool = false);
 void handleElemMatch(std::string, int, std::smatch, std::regex, std::unordered_map<std::string, std::string>&, std::map<int, std::string>&, std::string);
@@ -114,7 +112,7 @@ std::string matchStr = "";
 
 int main() {
 
-	// regular expressions for matching Markdown syntax
+	// regular expressions for matching Markdown syntax and converting it to HTML
 	std::regex heading_regex("^#{1,6}\\s\\w+.*");
 	std::regex heading_text_regex("\\#([^#]*)\\[");
 	std::regex paragraph_regex("^\\w.*");
@@ -137,7 +135,7 @@ int main() {
 	std::regex li_wattr_regex("^\\t\\<li\\s\\w+\\=");
 	std::regex anchor_element_regex("^\\[.*\\)|[^!]\\[.*\\)");
 
-	// todo: accept file path from std::in or from command line args
+	// todo: accept file path from user input filename with cin
 	char path[] = "./src/test-file.md";
 	InputFile f(path);
 	// Read the file and store contents in the
@@ -152,7 +150,6 @@ int main() {
 	// Open the output file and truncate previous files contents if it already exists
 	std::ofstream ofs;
 	ofs.open("./src/output.html", std::ios_base::ate);
-
 
 	// Regular expressions for converting Markdown to HTML
 	std::cout << "Starting regex " << std::endl;
@@ -169,10 +166,10 @@ int main() {
 	// Iterate each line of raw text read from the input file
 	// and match lines that need to undergo transformation
 	for (const auto &line : f.getRawVector()) {
+
 		lineNum += 1;
 
 		std::smatch match;
-
 		handleElemMatch(line, lineNum, match, empty_line_regex, elemMap, lineMap, "");
 		handleElemMatch(line, lineNum, match, heading_regex, elemMap, lineMap, "heading");
 		handleElemMatch(line, lineNum, match, paragraph_regex, elemMap, lineMap, "p");
@@ -184,8 +181,8 @@ int main() {
 		handleElemMatch(line, lineNum, match, img_element_regex, elemMap, lineMap, "img");
 
 		// todo: multi-line code snippets (<pre> + nested <code>)
-
 	}
+
 	cout << "Printing Ordered Map" << endl;
 	std::map<int, std::string>::iterator mapItr;
 	for (int i = 1; i <= lineMap.size(); i++) {
@@ -383,11 +380,13 @@ void checkForAttributes(std::unordered_map<std::string, std::string>& elemMap, s
 	std::regex element_attr_regex("\\[([^\\[]*)\\]");
 	std::regex element_link_href_regex("\\(([^.].*\\w)\\)");
 	std::smatch attr_match;
+
+    // handle any element attribute definitions
+    // match everything inside square brackets
     if (std::regex_search(matchStr, attr_match, element_attr_regex)) {
-        // handle any element attribute definitions
-        // match everything inside square brackets
         elemMap["attributes"] = attr_match[1];
     }
+
     if (elemMap["attributes"].empty()) {
         if (htmlTag != "li") {
         	std::regex text_no_attr_regex("([^#].*)");
@@ -408,17 +407,27 @@ void checkForAttributes(std::unordered_map<std::string, std::string>& elemMap, s
 }
 
 std::string createElement(std::unordered_map<std::string, std::string>& elemMap, std::string htmlTag, bool isPrevLineParagraphText) {
+	// check for attributes defined for the
+	// current element to be processed
 	checkForAttributes(elemMap, htmlTag);
-    // Use optional delimeter parameter of getline()
-    // to mimic a String.split("=") call for handling attrr definitions
-    // if there is multiple attribute definitions e.g.
-    // ## some title [class=foo,id=bar] first split
-    // by comma then handle specific attrs
+
+
     std::vector<std::string> vecElemAttr;
+    std::vector<std::string> elemAttrKeys;
+    std::vector<std::string> elemAttrVals;
     std::istringstream ss(elemMap["attributes"]);
     std::vector<std::string> elementFields;
     std::string sk, sl, ln;
+	std::string element = "";
+
+
+    // iterate the line and collect those attributes
+    // O(n^2) time
+	cout << "SS: " << ss << endl;
+	// todo: be more selective when grabbing commas
     while (std::getline(ss, sl, ',')) {
+    	sl = trim(sl);
+    	cout << "SL: " << sl << endl;
         vecElemAttr.push_back(sl);
         std::istringstream sm(sl);
         // split each name=value pair and store values
@@ -427,8 +436,7 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
         }
     }
 
-    std::vector<std::string> elemAttrKeys;
-    std::vector<std::string> elemAttrVals;
+    // O(n) time iterating the element fields vector
     for (int i = 0; i < elementFields.size(); i++) {
         if (i == 0 || i % 2 == 0) {
             // create key/value pair with attr name and value in unordered map
@@ -439,14 +447,19 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
             elemAttrVals.push_back(elementFields[i+1]);
         }
     }
-	std::string element = "";
+
+    // if element doesn't have any attributes construct element as is
 	if (elemMap["attributes"].empty()) {
         element = "<" + htmlTag + ">" + trim(elemMap["textContent"]) + "</" + htmlTag + ">";
-    } else {
+    }
+	// otherwise construct element with defined attributes
+	else {
         if (elemAttrKeys.size() != elemAttrVals.size()) {
         	perror("Attribute mismatch! A name=value pair is incomplete.");
         };
+
         std::string attrStr = "";
+
         for (int j = 0; j < elemAttrKeys.size(); j++) {
         	cout << "elem keys size: " << elemAttrKeys.size() << endl;
             if (elemAttrKeys.size() >= 2 || (j == 0 || j % 2 == 0)) {
@@ -457,10 +470,12 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
             };
         }
 
-        // Construct tag with attributes
+        attrStr = trim(attrStr);
+
         if (htmlTag == "img") {
         	element = "<" + htmlTag + " " + attrStr + " />";
-        } else if (htmlTag == "p") {
+        }
+        else if (htmlTag == "p") {
         	// todo: look for <a> or <img> within <p> tags
         	std::regex anchor_element_regex("^\\[.*\\)|[^!]\\[.*\\)");
         	std::smatch match;
@@ -521,7 +536,7 @@ std::string& trim(std::string& s, const char* t)
     return ltrim(rtrim(s, t), t);
 }
 
-// get current working directory printed to std out
+// Get current working directory printed to std out
 void cwd() {
 	char *getcwd(char *buf, size_t size);
 	char cwd[256]; // 256 character limit max

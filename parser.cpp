@@ -17,6 +17,7 @@
 #include <regex> // std::regex and std::regex_search
 #include <vector> // std::vector
 #include <sstream> // std::istringstream
+#include <queue>
 
 using std::cout;
 using std::endl;
@@ -61,8 +62,6 @@ FileData FileReader::readFile(char *filePath) {
 	std::string line;
 	int numberOfLines = 0;
 
-	// Open file at given file path for reading
-	// using ios_base::in as the stream open mode type
 	file.open(filePath, std::ios_base::in);
 
 	if (file.is_open()) {
@@ -73,7 +72,6 @@ FileData FileReader::readFile(char *filePath) {
 			numberOfLines++;
 			fileData.fvec.push_back(line);
 		}
-		// close the input file stream
 		file.close();
 	} else {
 		cout << "Error opening file at path: " << filePath << endl;
@@ -133,11 +131,15 @@ int main() {
 	std::regex blockquote_regex("^\\>.*");
 	std::regex li_sol_regex("^\\t\\<li\\>");
 	std::regex li_wattr_regex("^\\t\\<li\\s\\w+\\=");
-	std::regex anchor_element_regex("^\\[.*\\)|[^!]\\[.*\\)");
+	std::regex anchor_element_regex("([^!|^\\w]\\[.+?\\))|^\\[.+?\\)");
+	std::regex img_element_regex("(!\\[.+?\\])\\(.+?\\)");
 
 	// todo: accept file path from user input filename with cin
 	char path[] = "./src/test-file.md";
+
+	// construct a new input file instance
 	InputFile f(path);
+
 	// Read the file and store contents in the
 	// class fields of InputFile instance
 	f.read();
@@ -161,8 +163,6 @@ int main() {
 	std::unordered_map<std::string, std::string> elemMap;
 	int lineNum = 0;
 
-	std::regex img_element_regex("(!\\[.*\\].+\\))");
-
 	// Iterate each line of raw text read from the input file
 	// and match lines that need to undergo transformation
 	for (const auto &line : f.getRawVector()) {
@@ -181,6 +181,7 @@ int main() {
 		handleElemMatch(line, lineNum, match, img_element_regex, elemMap, lineMap, "img");
 
 		// todo: multi-line code snippets (<pre> + nested <code>)
+		// todo: reference links [1]: https://google.com or [google]: https://google.com
 	}
 
 	cout << "Printing Ordered Map" << endl;
@@ -212,7 +213,7 @@ int main() {
 				// check if the current line is the last <li>
 				// element in a unordered or ordered list and close the tag
 				if ((std::regex_search(currLine, match, li_wattr_regex) && nextLine == "") ||
-						(std::regex_search(currLine, match, li_sol_regex) && nextLine == "")) {
+					(std::regex_search(currLine, match, li_sol_regex) && nextLine == "")) {
 					lineMap[i] += "\n" + elemMap["listType"];
 				}
 				// single list item ul or ol
@@ -237,6 +238,7 @@ int main() {
 			// if line-1 is a completed line e.g. <h2 class="foo">hi there</h2>
 			// its not involved in a multi-line <p> tag
 			std::smatch match_helper;
+
 			if (std::regex_search(lineMap[i-1], match_helper, element_sol_regex) &&
 				std::regex_search(lineMap[i-1], match_helper, element_eol_regex)
 			) {
@@ -247,7 +249,6 @@ int main() {
 				std::string prevLineText = match_helper[0];
 				std::string currLineText = lineMap[i];
 				elemMap["textContent"] = prevLineText + currLineText;
-
 			}
 		}
 
@@ -258,6 +259,8 @@ int main() {
 		cout << it -> first;
 		cout << ": " << it -> second << endl;
 		// write to output file stream e.g. resultant HTML file
+//		std::string[] metadata = {"<!DOCTYPE html>", "<html lang=\"en\">", "<head>", "<meta charset=\"UTF-8\">", '<meta name="viewport" content="width=device-width, initial-scale=1.0">', '<title>Document</title>', '</head>' };
+
 		ofs << it -> second << endl;
 	}
 
@@ -270,9 +273,8 @@ int main() {
 }
 
 void handleElemMatch(std::string line, int lineNum, std::smatch match, std::regex re, std::unordered_map<std::string, std::string>& elemMap, std::map<int, std::string>& lineMap, std::string htmlTag) {
-	cout << "LINED UP: " << line << endl;
+	// check what kind of element is matched and handle accordingly
 	if (std::regex_search(line, match, re)) {
-		// check what kind of element is matched and handle accordingly
 		if (htmlTag == "heading") {
 			std::regex heading_level_regex("^[\\#{1-6}]+");
 			std::regex heading_text_wattr_regex("\\#([^#]*)\\[");
@@ -296,9 +298,11 @@ void handleElemMatch(std::string line, int lineNum, std::smatch match, std::rege
 			elemMap["attributes"] = "";
 		}
 		else if (htmlTag == "p") {
+			std::regex paragraph_regex("^\\w.*");
 			matchStr = match[0];
 			elemMap["textContent"] = matchStr;
-			lineMap[lineNum] = createElement(elemMap, htmlTag);
+			line = std::regex_replace(line, paragraph_regex, createElement(elemMap, htmlTag));
+			lineMap[lineNum] = line;
 			elemMap["attributes"] = "";
 
 		}
@@ -328,18 +332,32 @@ void handleElemMatch(std::string line, int lineNum, std::smatch match, std::rege
 		}
 		else if (htmlTag == "a") {
 			std::regex element_attr_regex("\\[([^\\[]*)\\]");
-			std::regex element_link_href_regex("\\(([^.].*\\w)\\)");
+			std::regex element_link_href_regex("\\((.+?)\\)");
+			std::regex anchor_element_regex("\\[.+?\\w\\].+?.\\)");
 			std::string linkName = "";
 			std::string linkHref = "";
+
+			// todo: while there is a link e.g. [foo](bar) add it to the queue for processing
+			std::queue<std::string> q;
+
+			cout << "Matching: " << match[0] << endl;
+
+			// count how many links there are then construct them
 			if (std::regex_search(line, match, element_attr_regex)) {
 				linkName = match[1];
 			}
 			if (std::regex_search(line, match, element_link_href_regex)) {
+
 				linkHref = match[1];
 			}
+			cout << "Link Name: " << linkName << endl;
+			cout << "Link Href: " << linkHref << endl;
 			matchStr = linkName + " [href=" + linkHref + "]";
+			cout << "Match Link: " << matchStr << endl;
 			elemMap["textContent"] = matchStr;
-			lineMap[lineNum] = createElement(elemMap, htmlTag);
+			cout << "LINE: " << line << endl;
+			// there might be more than 1, e.g. replace all the occurences with the linkName/linkHref associated
+			lineMap[lineNum] = "<p>" + std::regex_replace(line, anchor_element_regex, createElement(elemMap, htmlTag)) + "</p>";
 			elemMap["attributes"] = "";
 		}
 		else if (htmlTag == "img") {
@@ -394,7 +412,6 @@ void checkForAttributes(std::unordered_map<std::string, std::string>& elemMap, s
                 elemMap["textContent"] = attr_match[0];
             }
         }
-        // todo: look for <a> or <img> within <p> tags
     } else {
     	std::regex paragraph_text_regex("(^[\\w].*\\[)");
         if (std::regex_search(elemMap["textContent"], attr_match, paragraph_text_regex)) {
@@ -402,11 +419,11 @@ void checkForAttributes(std::unordered_map<std::string, std::string>& elemMap, s
             s.pop_back();
             elemMap["textContent"] = s;
         }
-        // todo: look for <a> or <img> within <p> tags
     }
 }
 
 std::string createElement(std::unordered_map<std::string, std::string>& elemMap, std::string htmlTag, bool isPrevLineParagraphText) {
+
 	// check for attributes defined for the
 	// current element to be processed
 	checkForAttributes(elemMap, htmlTag);
@@ -423,11 +440,9 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
 
     // iterate the line and collect those attributes
     // O(n^2) time
-	cout << "SS: " << ss << endl;
-	// todo: be more selective when grabbing commas
+	// todo: be more selective when grabbing commas e.g. [class=fuzz, alt=hey, there] leave 'hey, there' alone
     while (std::getline(ss, sl, ',')) {
     	sl = trim(sl);
-    	cout << "SL: " << sl << endl;
         vecElemAttr.push_back(sl);
         std::istringstream sm(sl);
         // split each name=value pair and store values
@@ -461,7 +476,6 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
         std::string attrStr = "";
 
         for (int j = 0; j < elemAttrKeys.size(); j++) {
-        	cout << "elem keys size: " << elemAttrKeys.size() << endl;
             if (elemAttrKeys.size() >= 2 || (j == 0 || j % 2 == 0)) {
                 // add space at the end
                 attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j] + '"' + " ";
@@ -474,16 +488,6 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
 
         if (htmlTag == "img") {
         	element = "<" + htmlTag + " " + attrStr + " />";
-        }
-        else if (htmlTag == "p") {
-        	// todo: look for <a> or <img> within <p> tags
-        	std::regex anchor_element_regex("^\\[.*\\)|[^!]\\[.*\\)");
-        	std::smatch match;
-        	if (std::regex_search(elemMap["textContent"], match, anchor_element_regex)) {
-        		elemMap["textContent"] = std::regex_replace(static_cast<std::string>(match[0]), anchor_element_regex, "<a>" + static_cast<std::string>(match[0]) + "</a>");
-        	}
-        	cout << "TEXT: " << elemMap["textContent"] << endl;
-        	element = "<" + htmlTag + " " + attrStr + ">" + trim(elemMap["textContent"]) + "</" + htmlTag + ">";
         }
         else {
         	element = "<" + htmlTag + " " + attrStr + ">" + trim(elemMap["textContent"]) + "</" + htmlTag + ">";
@@ -536,7 +540,7 @@ std::string& trim(std::string& s, const char* t)
     return ltrim(rtrim(s, t), t);
 }
 
-// Get current working directory printed to std out
+// get current working directory printed to std out
 void cwd() {
 	char *getcwd(char *buf, size_t size);
 	char cwd[256]; // 256 character limit max

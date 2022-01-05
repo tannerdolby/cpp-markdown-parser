@@ -336,29 +336,54 @@ void handleElemMatch(std::string line, int lineNum, std::smatch match, std::rege
 			std::regex anchor_element_regex("\\[.+?\\w\\].+?.\\)");
 			std::string linkName = "";
 			std::string linkHref = "";
+			std::string::const_iterator searchStart(line.cbegin());
+			std::smatch matched;
+			std::vector<std::string> links;
+			std::regex nonWordRegex("\\W");
+			int i = 0;
+			// iterate over the line while regex_search'ing (account for a line having multiple links)
+			while (std::regex_search(searchStart, line.cend(), matched, anchor_element_regex)) {
+				cout << (searchStart == line.cbegin() ? "" : " ") << "MATH: " << matched[0] << endl;
+				searchStart = matched.suffix().first;
+				std::string anchor = matched[0];
 
-			// todo: while there is a link e.g. [foo](bar) add it to the queue for processing
-			std::queue<std::string> q;
+				if (std::regex_search(anchor, match, element_attr_regex)) {
+					linkName = match[1];
+				}
+				if (std::regex_search(anchor, match, element_link_href_regex)) {
+					linkHref = match[1];
+				}
 
-			cout << "Matching: " << match[0] << endl;
+				matchStr = linkName + " [href=" + linkHref + "]";
+				elemMap["textContent"] = matchStr;
 
-			// count how many links there are then construct them
-			if (std::regex_search(line, match, element_attr_regex)) {
-				linkName = match[1];
+				// add constructed <a> elements to list of links to use in replacements
+				links.push_back(createElement(elemMap, htmlTag));
+
+
+				// create a literal match pattern to track which link is being replaced
+				std::string matchPattern = "";
+				for (int j = 0; j < anchor.length(); j++) {
+					std::string s(1, anchor[j]);
+					// if the character is a non-word char (\,[,],(,),.,etc)
+					// add two backslashes before it to construct the literal match regex
+					if (std::regex_match(s, nonWordRegex)) {
+						std::string letter(1, anchor[j]);
+						matchPattern += "\\\\" + letter;
+					} else {
+						matchPattern += s;
+					}
+				}
+
+				std::regex link_pattern(matchPattern);
+
+				cout << "Pattern: " << matchPattern << endl;
+				cout << "Link: " << links[i] << endl;
+				lineMap[lineNum] = std::regex_replace(line, link_pattern, links[i]);
+				i += 1;
+				elemMap["attributes"] = "";
+//				if (i > links.size()) break;
 			}
-			if (std::regex_search(line, match, element_link_href_regex)) {
-
-				linkHref = match[1];
-			}
-			cout << "Link Name: " << linkName << endl;
-			cout << "Link Href: " << linkHref << endl;
-			matchStr = linkName + " [href=" + linkHref + "]";
-			cout << "Match Link: " << matchStr << endl;
-			elemMap["textContent"] = matchStr;
-			cout << "LINE: " << line << endl;
-			// there might be more than 1, e.g. replace all the occurences with the linkName/linkHref associated
-			lineMap[lineNum] = "<p>" + std::regex_replace(line, anchor_element_regex, createElement(elemMap, htmlTag)) + "</p>";
-			elemMap["attributes"] = "";
 		}
 		else if (htmlTag == "img") {
 			std::regex element_attr_regex("\\[([^\\[]*)\\]");
@@ -428,7 +453,6 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
 	// current element to be processed
 	checkForAttributes(elemMap, htmlTag);
 
-
     std::vector<std::string> vecElemAttr;
     std::vector<std::string> elemAttrKeys;
     std::vector<std::string> elemAttrVals;
@@ -436,7 +460,6 @@ std::string createElement(std::unordered_map<std::string, std::string>& elemMap,
     std::vector<std::string> elementFields;
     std::string sk, sl, ln;
 	std::string element = "";
-
 
     // iterate the line and collect those attributes
     // O(n^2) time

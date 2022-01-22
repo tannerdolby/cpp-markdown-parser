@@ -3,97 +3,74 @@
 // Author      : Tanner Dolby
 // Version     : 0.0.1
 // Copyright   : MIT License
-// Description : A utility for parsing a Markdown file to HTML.
+// Description : A utility for parsing Markdown files to HTML.
 //============================================================================
 
-#include <iostream> // std::cout and std::endl
-#include <fstream> // std::ifstream and std::ofstream
+#include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
-#include <unordered_map> // std::unordered_map
-#include <map> // std::map
-#include <string> // std::string
-#include <regex> // std::regex and std::regex_search
-#include <vector> // std::vector
-#include <sstream> // std::istringstream
+#include <unordered_map>
+#include <map>
+#include <string>
+#include <regex>
+#include <vector>
+#include <sstream>
 #include <queue>
 
 using std::cout;
 using std::endl;
 
-// Class representing input Markdown files
-class InputFile {
+class File {
 	char *path;
-	std::string raw, html;
-	int numberOfLines;
-	std::vector<std::string> fileRawVec;
-	std::vector<std::string> fileHtmlVec;
-	public:
-		InputFile(char *f) { path = f; numberOfLines = 0; };
-		void read();
-		std::string getFilePath() { return path; };
-		std::string getRawText() { return raw; };
-		std::string getHTML() { return html; };
-		std::vector<std::string> getRawVector() { return fileRawVec; };
-		std::vector<std::string> getHtmlVector() { return fileHtmlVec; };
-		int getNumberOfLines() { return numberOfLines; };
-		void writeHTML(std::string line) { fileHtmlVec.push_back(line); };
+	std::string raw, html = "";
+	int numLines = 0;
+	std::vector<std::string> linesRaw;
+	std::vector<std::string> linesHtml;
+public:
+	File(char *f) { path = f; numLines = 0; };
+	void read();
+	std::vector<File> readFiles(std::vector<char*> vec);
+	std::string getFilePath() { return path; };
+	std::string getRawText() { return raw; };
+	std::string getHTML() { return html; };
+	std::vector<std::string> getRawVec() { return linesRaw; };
+	std::vector<std::string> getHtmlVec() { return linesHtml; };
+	int getNumberOfLines() { return numLines; };
+	void writeHTML(std::string line) { linesHtml.push_back(line); };
 };
 
-struct FileData {
-	std::string raw;
-	int numberOfLines;
-	std::vector<std::string> fvec;
-	FileData* head;
-	FileData() : raw(""), numberOfLines(0), head(nullptr) {};
-};
-
-class FileReader {
-	public:
-		FileData readFile(char *f);
-		void readFiles(std::vector<char*> vec);
-};
-
-FileData FileReader::readFile(char *filePath) {
-	FileData fileData;
-	std::ifstream file;
+void File::read() {
+	std::ifstream f;
 	std::string rawText = "";
 	std::string line;
-	int numberOfLines = 0;
+	int lineCount = 0;
 
-	file.open(filePath, std::ios_base::in);
+	f.open(path, std::ios_base::in);
 
-	if (file.is_open()) {
-		// begin reading file line by line
-		while (std::getline(file, line)) {
-			cout << line << endl;
+	if (f.is_open()) {
+		while (std::getline(f, line)) {
+			cout << line << endl; // todo: remove
 			rawText += line + "\n";
-			numberOfLines++;
-			fileData.fvec.push_back(line);
+			lineCount++;
+			linesRaw.push_back(line);
 		}
-		file.close();
+		f.close();
 	} else {
-		cout << "Error opening file at path: " << filePath << endl;
+		cout << "Error opening file at path: " << path << endl;
 	}
 
-	fileData.raw = rawText;
-	fileData.numberOfLines = numberOfLines;
-
-	return fileData;
+	raw = rawText;
+	numLines = lineCount;
 }
 
-void FileReader::readFiles(std::vector<char*> files) {
-	// todo: ["path1", "path2"] -> std::vector<FileData> and then write each output file
-}
+std::vector<File> File::readFiles(std::vector<char*> files) {
+	// todo: ["path1", "path2"] -> std::vector<File> and then write each output file
+	std::vector<File> fileVec;
+	return fileVec;
 
-void InputFile::read() {
-	FileReader fr;
-	FileData fd = fr.readFile(path);
-	raw = fd.raw;
-	fileRawVec = fd.fvec;
-	numberOfLines = fd.numberOfLines;
-};
+}
 
 // function prototypes
 void cwd();
@@ -135,10 +112,12 @@ int main() {
 	std::regex img_element_regex("(!\\[.+?\\])\\(.+?\\)");
 
 	// todo: accept file path from user input filename with cin
+	//char userPath[] = "";
+	//std::cin >> userPath;
 	char path[] = "./src/test-file.md";
 
 	// construct a new input file instance
-	InputFile f(path);
+	File f(path);
 
 	// Read the file and store contents in the
 	// class fields of InputFile instance
@@ -165,7 +144,7 @@ int main() {
 
 	// Iterate each line of raw text read from the input file
 	// and match lines that need to undergo transformation
-	for (const auto &line : f.getRawVector()) {
+	for (const auto &line : f.getRawVec()) {
 
 		lineNum += 1;
 
@@ -186,53 +165,51 @@ int main() {
 
 	cout << "Printing Ordered Map" << endl;
 	std::map<int, std::string>::iterator mapItr;
-	for (int i = 1; i <= lineMap.size(); i++) {
+	for (int i = 1; i <= lineMap.size()-1; i++) {
 		cout << i << ": " << lineMap[i] << endl;
 		bool isPrevLineCompleted = false;
 
 		if (i > 1) {
-			if (i+1 <= lineMap.size()) {
 
-				std::string prevLine = lineMap[i-1];
-				std::string currLine = lineMap[i];
-				std::string nextLine = lineMap[i+1];
+			std::string prevLine = lineMap[i-1];
+			std::string currLine = lineMap[i];
+			std::string nextLine = lineMap[i+1];
 
-				std::smatch match;
+			std::smatch match;
 
-				bool isCurrLineFullPTag = (std::regex_search(currLine, match, element_p_sol_regex) &&
-										   std::regex_search(currLine, match, element_p_eol_regex));
+			bool isCurrLineFullPTag = (std::regex_search(currLine, match, element_p_sol_regex) &&
+			                            std::regex_search(currLine, match, element_p_eol_regex));
 
-				// handle formatting ordered/unordered lists
-				if (std::regex_search(currLine, match, ol_or_ul_regex) && std::regex_search(nextLine, match, ol_or_ul_regex)) {
-					elemMap["textContent"] =  match.suffix();
-				}
-				// insert closing list elements
-				if (std::regex_search(currLine, match, ol_or_ul_regex)) {
-					elemMap["listType"] = static_cast<std::string>(match[0]).insert(1, 1, '/');
-				}
-				// check if the current line is the last <li>
-				// element in a unordered or ordered list and close the tag
-				if ((std::regex_search(currLine, match, li_wattr_regex) && nextLine == "") ||
-					(std::regex_search(currLine, match, li_sol_regex) && nextLine == "")) {
-					lineMap[i] += "\n" + elemMap["listType"];
-				}
-				// single list item ul or ol
-				if (std::regex_search(currLine, match, ol_or_ul_regex) && nextLine == "") {
-					lineMap[i] += "\n" + elemMap["listType"];
-				}
-				// Remove opening and closing <p>,</p> tags for text
-				// in between the start and end in a multi-line paragraph block
-				if (std::regex_search(nextLine, match, element_p_sol_regex)&& isCurrLineFullPTag && nextLine != "") {
-					lineMap[i] = std::regex_replace(std::regex_replace(currLine, element_p_eol_regex, ""), element_p_sol_regex, "");
-				}
-				// Remove closing </p> tag on first line in multi-line paragraph block
-				if (std::regex_search(currLine, match, element_p_sol_regex) && prevLine == "" && nextLine != "") {
-					lineMap[i] = std::regex_replace(currLine, element_p_eol_regex, "");
-				}
-				// Remove starting <p> tag on last line in multi-line parapgraph block
-				if (std::regex_search(currLine, match, element_p_sol_regex) && prevLine != "" && nextLine == "") {
-					lineMap[i] = std::regex_replace(currLine, element_p_sol_regex, "");
-				}
+			// handle formatting ordered/unordered lists
+			if (std::regex_search(currLine, match, ol_or_ul_regex) && std::regex_search(nextLine, match, ol_or_ul_regex)) {
+			    elemMap["textContent"] =  match.suffix();
+			}
+			// insert closing list elements
+			if (std::regex_search(currLine, match, ol_or_ul_regex)) {
+			    elemMap["listType"] = static_cast<std::string>(match[0]).insert(1, 1, '/');
+			}
+			// check if the current line is the last <li>
+			// element in a unordered or ordered list and close the tag
+			if ((std::regex_search(currLine, match, li_wattr_regex) && nextLine == "") ||
+			    (std::regex_search(currLine, match, li_sol_regex) && nextLine == "")) {
+			    lineMap[i] += "\n" + elemMap["listType"];
+			}
+			// single list item ul or ol
+			if (std::regex_search(currLine, match, ol_or_ul_regex) && nextLine == "") {
+			    lineMap[i] += "\n" + elemMap["listType"];
+			}
+			// Remove opening and closing <p>,</p> tags for text
+			// in between the start and end in a multi-line paragraph block
+			if (std::regex_search(nextLine, match, element_p_sol_regex)&& isCurrLineFullPTag && nextLine != "") {
+			    lineMap[i] = std::regex_replace(std::regex_replace(currLine, element_p_eol_regex, ""), element_p_sol_regex, "");
+			}
+			// Remove closing </p> tag on first line in multi-line paragraph block
+			if (std::regex_search(currLine, match, element_p_sol_regex) && prevLine == "" && nextLine != "") {
+			    lineMap[i] = std::regex_replace(currLine, element_p_eol_regex, "");
+			}
+			// Remove starting <p> tag on last line in multi-line parapgraph block
+			if (std::regex_search(currLine, match, element_p_sol_regex) && prevLine != "" && nextLine == "") {
+			    lineMap[i] = std::regex_replace(currLine, element_p_sol_regex, "");
 			}
 
 			// if line-1 is a completed line e.g. <h2 class="foo">hi there</h2>
@@ -259,13 +236,11 @@ int main() {
 		cout << it -> first;
 		cout << ": " << it -> second << endl;
 		// write to output file stream e.g. resultant HTML file
-//		std::string[] metadata = {"<!DOCTYPE html>", "<html lang=\"en\">", "<head>", "<meta charset=\"UTF-8\">", '<meta name="viewport" content="width=device-width, initial-scale=1.0">', '<title>Document</title>', '</head>' };
-
 		ofs << it -> second << endl;
 	}
 
 	cout << "HTML: " << endl;
-	for (const auto sv : f.getHtmlVector()) {
+	for (const auto sv : f.getHtmlVec()) {
 		cout << "L: " << sv << endl;
 	}
 
@@ -339,51 +314,45 @@ void handleElemMatch(std::string line, int lineNum, std::smatch match, std::rege
 			std::string::const_iterator searchStart(line.cbegin());
 			std::smatch matched;
 			std::vector<std::string> links;
-			std::regex nonWordRegex("\\W");
+			std::regex bracket_or_paren_reg("[\\[|\\]|\\(|\\)]");
+
+			std::queue<std::string> q;
+
 			int i = 0;
 			// iterate over the line while regex_search'ing (account for a line having multiple links)
 			while (std::regex_search(searchStart, line.cend(), matched, anchor_element_regex)) {
 				cout << (searchStart == line.cbegin() ? "" : " ") << "MATH: " << matched[0] << endl;
 				searchStart = matched.suffix().first;
 				std::string anchor = matched[0];
+				q.push(anchor);
 
-				if (std::regex_search(anchor, match, element_attr_regex)) {
-					linkName = match[1];
-				}
-				if (std::regex_search(anchor, match, element_link_href_regex)) {
-					linkHref = match[1];
-				}
+				while (!q.empty()) {
+					std::string a = q.front();
+					q.pop();
 
-				matchStr = linkName + " [href=" + linkHref + "]";
-				elemMap["textContent"] = matchStr;
-
-				// add constructed <a> elements to list of links to use in replacements
-				links.push_back(createElement(elemMap, htmlTag));
-
-
-				// create a literal match pattern to track which link is being replaced
-				std::string matchPattern = "";
-				for (int j = 0; j < anchor.length(); j++) {
-					std::string s(1, anchor[j]);
-					// if the character is a non-word char (\,[,],(,),.,etc)
-					// add two backslashes before it to construct the literal match regex
-					if (std::regex_match(s, nonWordRegex)) {
-						std::string letter(1, anchor[j]);
-						matchPattern += "\\\\" + letter;
-					} else {
-						matchPattern += s;
+					if (std::regex_search(anchor, match, element_attr_regex)) {
+						linkName = match[1];
 					}
+					if (std::regex_search(anchor, match, element_link_href_regex)) {
+						linkHref = match[1];
+					}
+					matchStr = linkName + " [href=" + linkHref + "]";
+					elemMap["textContent"] = matchStr;
+
+					// add constructed <a> elements to list of links to use in replacements
+					links.push_back(createElement(elemMap, htmlTag));
 				}
 
-				std::regex link_pattern(matchPattern);
-
-				cout << "Pattern: " << matchPattern << endl;
-				cout << "Link: " << links[i] << endl;
-				lineMap[lineNum] = std::regex_replace(line, link_pattern, links[i]);
-				i += 1;
-				elemMap["attributes"] = "";
-//				if (i > links.size()) break;
+				cout << "links 0: " << links[0] << endl;
+				cout << "links 1: " << links[1] << endl;
 			}
+			std::string tempLine = line;
+
+
+			cout << "Link: " << links[i] << endl;
+			lineMap[lineNum] = std::regex_replace(line, anchor_element_regex, createElement(elemMap, htmlTag));
+			i += 1;
+			elemMap["attributes"] = "";
 		}
 		else if (htmlTag == "img") {
 			std::regex element_attr_regex("\\[([^\\[]*)\\]");

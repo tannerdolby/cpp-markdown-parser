@@ -51,7 +51,7 @@ Provide a input Markdown file path i.e. `./src/test-file.md` and the utility wil
 
 ### Required Parameters
 1. Input file path `char*`
-2. Output file path `char*` - default: .html extension added to input path
+2. Output file path `char*` (default: .html extension added to input path)
 
 Both of the above params are expected for every instance of a `File`. Reading a single file or multiple files at once is supported Support for reading a single file or multiple files.
 

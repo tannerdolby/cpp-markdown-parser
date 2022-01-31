@@ -53,7 +53,7 @@ Provide a input Markdown file path i.e. `./src/test-file.md` and the utility wil
 1. Input file path `char*`
 2. Output file path `char*`
 
-Both of the above params are expected for every instance of a [`File`](https://github.com/tannerdolby/cpp-markdown-parser/blob/a59572f8cdd07ade36cc13222a07d3494ae00573/parser.cpp#L25-L42). Reading a single file or multiple files at once is supported Support for reading a single file or multiple files.
+Both of the above params are expected for every instance of a `File`. Reading a single file or multiple files at once is supported Support for reading a single file or multiple files.
 
 ## Resources
 - [regex101](https://regex101.com)

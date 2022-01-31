@@ -11,7 +11,7 @@ Happy parsing.
 
 [Browse the web](https://google.com)
 
-![A cat with paws on toy sized MacBook Pro laptop pretending to type while sitting on owners lap](https://bukk.it/air.jpg)
+![A cat with paws on toy sized MacBook Pro laptop pretending to type](https://bukk.it/air.jpg)
 
 - i'm blue [style=color: blue;]
 - foo
@@ -31,17 +31,17 @@ will be transformed to:
 
 <p><a href="https://google.com">Browse the web</a></p>
 
-<img src="https://bukk.it/air.jpg"  alt="A cat with paws on toy sized MacBook Pro laptop pretending to type while sitting on owners lap" />
+<img src="https://bukk.it/air.jpg"  alt="A cat with paws on toy sized MacBook Pro laptop pretending to type" />
 
 <ul>
-	<li style="color: blue;">i'm blue</li>
-	<li>foo</li>
-	<li>fizz</li>
+    <li style="color: blue;">i'm blue</li>
+    <li>foo</li>
+    <li>fizz</li>
 </ul>
 
 <ol>
-	<li>item one</li>
-	<li class="item-two">item two</li>
+    <li>item one</li>
+    <li class="item-two">item two</li>
     <li>item three</li>
 </ol>
 ```

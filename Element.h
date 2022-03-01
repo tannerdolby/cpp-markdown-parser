@@ -2,43 +2,49 @@
 #include <unordered_map>
 #include <regex>
 #include "Helpers.h"
-using namespace std;
 
-string& ltrim(string&, const char* = " \t\n\r\f\v");
-string& rtrim(string&, const char* = " \t\n\r\f\v");
-string& trim(string&, const char* = " \t\n\r\f\v");
+std::string& ltrim(std::string&, const char* = " \t\n\r\f\v");
+std::string& rtrim(std::string&, const char* = " \t\n\r\f\v");
+std::string& trim(std::string&, const char* = " \t\n\r\f\v");
 
 class Element {
 public:
-	string textContent;
-	string element;
-	string tagName;
-	string attrStr;
-	unordered_map<string, string> elemMap;
+	std::string textContent;
+	std::string element;
+	std::string tagName;
+	std::string attrStr;
+	std::unordered_map<std::string, std::string> elemMap;
 
-	Element(unordered_map<string, string> mp, string tag) {
+	Element(std::unordered_map<std::string, std::string> mp, std::string tag) {
 		textContent = "";
 		element = "";
 		attrStr = "";
 		tagName = tag;
 		elemMap = mp;
 	}
-	// Create HTML element and return its HTML tag as string
-	string create() {
-		elemMap["matchStr"] = elemMap["textContent"];
-		this->checkForAttribute(elemMap, tagName);
 
-	    vector<string> vecElemAttr, elemAttrKeys, elemAttrVals, elementFields;
-	    istringstream ss(elemMap["attributes"]);
-	    string sk, sl, ln;
-		string element = "";
+	// Create HTML element and return its HTML tag as string
+	std::string create() {
+
+		if (tagName == "img") {
+			// no text content
+			checkForAttribute(elemMap, tagName);
+		} else {
+			elemMap["matchStr"] = elemMap["textContent"];
+			checkForAttribute(elemMap, tagName);
+		}
+
+	    std::vector<std::string> vecElemAttr, elemAttrKeys, elemAttrVals, elementFields;
+	    std::istringstream ss(elemMap["attributes"]);
+	    std::string sk, sl, ln;
+		std::string element = "";
 
 	    // iterate the attribute string and collect values
 		// todo: be more selective when grabbing commas e.g. [class=fuzz, alt=hey, there] leave 'hey, there' alone
 	    while (getline(ss, sl, ',')) {
 	    	sl = trim(sl);
 	        vecElemAttr.push_back(sl);
-	        istringstream sm(sl);
+	        std::istringstream sm(sl);
 	        // split each name=value pair and store values
 	        while (getline(sm, sk, '=')) {
 	            elementFields.push_back(sk);
@@ -49,7 +55,7 @@ public:
 	    for (int i = 0; i < elementFields.size(); i++) {
 	        if (i == 0 || i % 2 == 0) {
 	            // create key/value pair with attr name and value in unordered map
-	            string key = elementFields[i];
+	            std::string key = elementFields[i];
 	            // add pair to map
 	            elemMap[key] = elementFields[i+1];
 	            elemAttrKeys.push_back(key);
@@ -79,7 +85,7 @@ public:
 
 	        attrStr = trim(attrStr);
 
-	        unordered_set<string> hLevels;
+	        std::unordered_set<std::string> hLevels;
 	        hLevels.insert("h1");
 	        hLevels.insert("h2");
 	        hLevels.insert("h3");
@@ -101,10 +107,10 @@ public:
 		return element;
 	}
 
-	void checkForAttribute(unordered_map<string, string>& elemMap, string htmlTag) {
-		regex element_attr_regex("\\[([^\\[]*)\\]");
-		regex element_link_href_regex("\\(([^.].*\\w)\\)");
-		smatch attr_match;
+	void checkForAttribute(std::unordered_map<std::string, std::string>& elemMap, std::string htmlTag) {
+		std::regex element_attr_regex("\\[([^\\[]*)\\]");
+		std::regex element_link_href_regex("\\(([^.].*\\w)\\)");
+		std::smatch attr_match;
 
 	    // handle any element attribute definitions
 	    // match everything inside square brackets
@@ -114,15 +120,15 @@ public:
 
 	    if (elemMap["attributes"].empty()) {
 	        if (htmlTag != "li") {
-	        	regex text_no_attr_regex("([^#].*)");
+	        	std::regex text_no_attr_regex("([^#].*)");
 	            if (regex_search(elemMap["textContent"], attr_match, text_no_attr_regex)) {
 	                elemMap["textContent"] = attr_match[0];
 	            }
 	        }
 	    } else {
-	    	regex paragraph_text_regex("(^[\\w].*\\[)");
+	    	std::regex paragraph_text_regex("(^[\\w].*\\[)");
 	        if (regex_search(elemMap["textContent"], attr_match, paragraph_text_regex)) {
-	            string s = attr_match[0];
+	            std::string s = attr_match[0];
 	            s.pop_back();
 	            elemMap["textContent"] = s;
 	        }

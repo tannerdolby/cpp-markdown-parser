@@ -2,55 +2,52 @@
 #include <vector>
 #include <unordered_map>
 
-using namespace std;
-
 class File {
 	char *path;
 	char *outputPath;
-	string raw, html;
+	std::string raw, html;
 	int numLines;
-	vector<string> linesRaw;
-	vector<string> linesHtml;
+	std::vector<std::string> linesRaw;
+	std::vector<std::string> linesHtml;
 public:
 	File(char *f, char *op) { path = f; outputPath = op; numLines = 0; };
 
 	void read() {
-		ifstream f;
-		string rawText = "", line = "";
+		std::ifstream f;
+		std::string rawText = "", line = "";
 		int lineCount = 0;
 
-		f.open(path, ios_base::in);
+		f.open(path, std::ios_base::in);
 
 		if (f.is_open()) {
 			while (getline(f, line)) {
-				cout << line << endl; // todo: remove
+				std::cout << line << std::endl; // todo: remove
 				rawText += line + "\n";
 				lineCount++;
 				linesRaw.push_back(line);
 			}
 			f.close();
 		} else {
-			cout << "Error opening file at path: " << path << endl;
+			std::cout << "Error opening file at path: " << path << std::endl;
 		}
 
 		raw = rawText;
 		numLines = lineCount;
 	}
 
-	vector<File> readFiles(vector<pair<char*, char*> > files) {
+	std::vector<File> readFiles(std::vector<std::pair<char*, char*> > files) {
 		// todo: ["path1", "path2"] -> vector<File> and then write each output file
-		vector<File> fileVec;
+		std::vector<File> fileVec;
 		for (auto fp : files) {
 			// create a new file instance then read file by file
 			File f(fp.first, fp.second);
-	//		f.read();
 
 			// todo: do transformations
 
 			// Open the output file and truncate previous files contents if it already exists
-			ofstream ofs;
+			std::ofstream ofs;
 			char* outputPath = "";
-			ofs.open(f.outputPath, ios_base::ate);
+			ofs.open(f.outputPath, std::ios_base::ate);
 		}
 
 		return fileVec;
@@ -64,19 +61,19 @@ public:
 		return outputPath;
 	}
 
-	string getRawText() {
+	std::string getRawText() {
 		return raw;
 	}
 
-	string getHTML() {
+	std::string getHTML() {
 		return html;
 	}
 
-	vector<string> getRawVec() {
+	std::vector<std::string> getRawVec() {
 		return linesRaw;
 	}
 
-	vector<string> getHtmlVec() {
+	std::vector<std::string> getHtmlVec() {
 		return linesHtml;
 	}
 
@@ -85,12 +82,12 @@ public:
 	}
 
 	// wip
-	void writeHTML(unordered_map<string, string> &lineMap, ofstream &ofs) {
+	void writeHTML(std::unordered_map<std::string, std::string> &lineMap, std::ofstream &ofs) {
 		for (auto it = lineMap.begin(); it != lineMap.end(); ++it) {
-			cout << it -> first;
-			cout << ": " << it -> second << endl;
+			std::cout << it -> first;
+			std::cout << ": " << it -> second << std::endl;
 			// write to output file stream e.g. resultant HTML file
-			ofs << it -> second << endl;
+			ofs << it -> second << std::endl;
 		}
 	}
 };

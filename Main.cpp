@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : markdown-parser.cpp
+// Name        : Parser.cpp
 // Author      : Tanner Dolby
 // Version     : 0.0.1
 // Copyright   : MIT License
@@ -31,14 +31,9 @@ typedef std::unordered_map<std::string, std::string> StringMap;
 // function prototypes
 void cwd();
 string getHeadingLevel(StringMap&);
-string createElement(StringMap&, string);
 void handleElemMatch(string, int, smatch, regex, StringMap&, map<int, string>&, std::string);
-void checkForAttributes(StringMap& elemMap, string htmlTag);
 void checkRegexAndUpdate(StringMap &elemMap, std::string line, std::smatch match, std::regex re, std::string key);
 
-// todo: create a DOM tree representation of created elements
-
-string matchStr = "";
 
 int main() {
 
@@ -119,7 +114,7 @@ int main() {
 		bool isCurrLineFullPTag = (regex_search(currLine, match, element_p_sol_regex) &&
 		                            regex_search(currLine, match, element_p_eol_regex));
 
-		/* Refactor */
+		/* Refactor all this conditional logic */
 		// handle formatting ordered/unordered lists
 		if (regex_search(currLine, match, ol_or_ul_regex) && regex_search(nextLine, match, ol_or_ul_regex)) {
 		    elemMap["textContent"] =  match.suffix();
@@ -156,7 +151,8 @@ int main() {
 		// its not involved in a multi-line <p> tag
 		smatch match_helper;
 
-		if (regex_search(lineMap[i-1], match_helper, element_sol_regex) &&
+		if (
+			regex_search(lineMap[i-1], match_helper, element_sol_regex) &&
 		    regex_search(lineMap[i-1], match_helper, element_eol_regex)
 		) {
 		    isPrevLineCompleted = true;
@@ -175,11 +171,6 @@ int main() {
 		cout << ": " << it -> second << endl;
 		// write to output file stream e.g. resultant HTML file
 		ofs << it -> second << endl;
-	}
-
-	cout << "HTML: " << endl;
-	for (const auto sv : f.getHtmlVec()) {
-		cout << "L: " << sv << endl;
 	}
 
 	return 0;
@@ -202,7 +193,10 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 			elemMap["matchStr"] = match[0];
 
 			checkRegexAndUpdate(elemMap, line, match, heading_level_regex, "headingLevel");
-			checkRegexAndUpdate(elemMap, line, match, heading_text_wattr_regex, "textContent");
+
+			if (std::regex_search(line, match, heading_text_wattr_regex)) {
+				elemMap["textContent"] = match[1];
+			}
 			checkRegexAndUpdate(elemMap, line, match, heading_text_wout_attr_re, "textContent");
 
 			Element heading(elemMap, getHeadingLevel(elemMap));
@@ -229,8 +223,7 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 		}
 		else if (htmlTag == "ul") {
 			regex re("\\-\\s");
-			matchStr = regex_replace(line, re, "");
-			elemMap["textContent"] = matchStr;
+			elemMap["textContent"] = regex_replace(line, re, "");
 			elemMap["listType"] = htmlTag;
 			if (lineMap[lineNum-1] == "") {
 				Element li(elemMap, "li");
@@ -275,10 +268,10 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 
 					elemMap["textContent"] = linkName + " [href=" + linkHref + "]";
 
-//					Element anchor(elemMap, "a");
+					Element anchor(elemMap, "a");
 
 					// add constructed <a> elements to list of links to use in replacements
-					links.push_back(createElement(elemMap, htmlTag));
+					links.push_back(anchor.create());
 				}
 
 				for (auto l : links) {
@@ -287,145 +280,40 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 				}
 			}
 			Element anchor(elemMap, "a");
-//			lineMap[lineNum] = "<p>" + regex_replace(line, anchor_element_regex, createElement(elemMap, htmlTag)) + "</p>";
 			lineMap[lineNum] = "<p>" + regex_replace(line, anchor_element_regex, anchor.create()) + "</p>";
 		}
 		else if (htmlTag == "img") {
 			regex element_attr_regex("\\[([^\\[]*)\\]");
 			regex element_link_href_regex("\\(([^.].*\\w)\\)");
 			string altText = "", imgSrc = "";
+
 			if (regex_search(line, match, element_attr_regex)) {
 				altText = match[1];
 			}
 			if (regex_search(line, match, element_link_href_regex)) {
 				imgSrc = match[1];
 			}
+
 			elemMap["matchStr"] = "[src=" + imgSrc + ", alt=" + altText + "]";
 			elemMap["textContent"] = "";
 			Element img(elemMap, htmlTag);
-//			lineMap[lineNum] = createElement(elemMap, htmlTag);
 			lineMap[lineNum] = img.create();
-//			elemMap["attributes"] = "";
 		}
 		else if (htmlTag == "blockquote") {
 			regex re("\\>\\s");
 			elemMap["textContent"] = regex_replace(static_cast<string>(match[0]), re, "");
-			lineMap[lineNum] = createElement(elemMap, htmlTag);
-			elemMap["attributes"] = "";
+			Element blockquote(elemMap, htmlTag);
+			lineMap[lineNum] = blockquote.create();
 		}
 		else if (htmlTag == "code") {
-			matchStr = match[1];
-			elemMap["textContent"] = matchStr;
-			string code =
-			lineMap[lineNum] = createElement(elemMap, htmlTag);
-		}
-		else if (htmlTag == "") {
-			matchStr = "";
+			elemMap["textContent"] = match[1];
+			Element code(elemMap, htmlTag);
+			lineMap[lineNum] = code.create();
+		} else {
+			elemMap["matchStr"] = "";
 		}
 	}
 }
-
-void checkForAttributes(unordered_map<string, string>& elemMap, string htmlTag) {
-	regex element_attr_regex("\\[([^\\[]*)\\]");
-	regex element_link_href_regex("\\(([^.].*\\w)\\)");
-	smatch attr_match;
-
-    // handle any element attribute definitions
-    // match everything inside square brackets
-    if (regex_search(matchStr, attr_match, element_attr_regex)) {
-        elemMap["attributes"] = attr_match[1];
-    }
-
-    if (elemMap["attributes"].empty()) {
-        if (htmlTag != "li") {
-        	regex text_no_attr_regex("([^#].*)");
-            if (regex_search(elemMap["textContent"], attr_match, text_no_attr_regex)) {
-                elemMap["textContent"] = attr_match[0];
-            }
-        }
-    } else {
-    	regex paragraph_text_regex("(^[\\w].*\\[)");
-        if (regex_search(elemMap["textContent"], attr_match, paragraph_text_regex)) {
-            string s = attr_match[0];
-            s.pop_back();
-            elemMap["textContent"] = s;
-        }
-    }
-}
-
-string createElement(unordered_map<string,string>& elemMap, string htmlTag) {
-
-		// check for attributes defined for the
-		// current element to be processed
-		checkForAttributes(elemMap, htmlTag);
-
-	    vector<string> vecElemAttr, elemAttrKeys, elemAttrVals, elementFields;
-	    istringstream ss(elemMap["attributes"]);
-	    string sk, sl, ln;
-		string element = "";
-
-	    // iterate the line and collect those attributes
-	    // O(n^2) time
-		// todo: be more selective when grabbing commas e.g. [class=fuzz, alt=hey, there] leave 'hey, there' alone
-	    while (getline(ss, sl, ',')) {
-	    	sl = trim(sl);
-	        vecElemAttr.push_back(sl);
-	        istringstream sm(sl);
-	        // split each name=value pair and store values
-	        while (getline(sm, sk, '=')) {
-	            elementFields.push_back(sk);
-	        }
-	    }
-
-	    // O(n) time iterating the element fields vector
-	    for (int i = 0; i < elementFields.size(); i++) {
-	        if (i == 0 || i % 2 == 0) {
-	            // create key/value pair with attr name and value in unordered map
-	            string key = elementFields[i];
-	            // add pair to map
-	            elemMap[key] = elementFields[i+1];
-	            elemAttrKeys.push_back(key);
-	            elemAttrVals.push_back(elementFields[i+1]);
-	        }
-	    }
-
-
-	    // CONSTRUCT ELEMENT
-	    // if element doesn't have any attributes construct element as is
-		if (elemMap["attributes"].empty()) {
-	        element = "<" + htmlTag + ">" + trim(elemMap["textContent"]) + "</" + htmlTag + ">";
-	    }
-		// otherwise construct element with defined attributes
-		else {
-	        if (elemAttrKeys.size() != elemAttrVals.size()) {
-	        	perror("Attribute mismatch! A name=value pair is incomplete.");
-	        };
-
-	        string attrStr = "";
-
-	        for (int j = 0; j < elemAttrKeys.size(); j++) {
-	            if (elemAttrKeys.size() >= 2 || (j == 0 || j % 2 == 0)) {
-	                // add space at the end
-	                attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j] + '"' + " ";
-	            } else {
-	            	attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j] + '"';
-	            };
-	        }
-
-	        attrStr = trim(attrStr);
-
-	        if (htmlTag == "img") {
-	        	element = "<" + htmlTag + " " + attrStr + " />";
-	        }
-	        else {
-	        	element = "<" + htmlTag + " " + attrStr + ">" + trim(elemMap["textContent"]) + "</" + htmlTag + ">";
-	        }
-	    }
-
-		return element;
-	}
-
-
 
 string getHeadingLevel(unordered_map<string, string> &elemMap) {
 	string headingLevel = "";

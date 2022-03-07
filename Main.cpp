@@ -193,11 +193,11 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 			elemMap["matchStr"] = match[0];
 
 			checkRegexAndUpdate(elemMap, line, match, heading_level_regex, "headingLevel");
+			checkRegexAndUpdate(elemMap, line, match, heading_text_wout_attr_re, "textContent");
 
 			if (std::regex_search(line, match, heading_text_wattr_regex)) {
 				elemMap["textContent"] = match[1];
 			}
-			checkRegexAndUpdate(elemMap, line, match, heading_text_wout_attr_re, "textContent");
 
 			Element heading(elemMap, getHeadingLevel(elemMap));
 			lineMap[lineNum] = heading.create();
@@ -255,8 +255,10 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 				q.push(anchor);
 
 				while (!q.empty()) {
-					string a = q.front();
+					string mdAnchor = q.front();
 					q.pop();
+
+					std::cout << mdAnchor << std::endl;
 
 					if (regex_search(anchor, match, element_attr_regex)) {
 						linkName = match[1];
@@ -273,12 +275,16 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 					// add constructed <a> elements to list of links to use in replacements
 					links.push_back(anchor.create());
 				}
-
-				for (auto l : links) {
-					cout << "link: " << l << endl;
-
-				}
 			}
+			std::cout << "Links" << std::endl;
+			std::string s = "";
+			for (auto l : links) {
+				cout << "link: " << l << endl;
+//				s += regex_replace(line, anchor_element_regex, l);
+
+			}
+			lineMap[lineNum] = "<p>" + s + "</p>";
+
 			Element anchor(elemMap, "a");
 			lineMap[lineNum] = "<p>" + regex_replace(line, anchor_element_regex, anchor.create()) + "</p>";
 		}

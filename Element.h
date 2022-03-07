@@ -28,6 +28,8 @@ public:
 		if (tagName == "img") {
 			// no text content
 			checkForAttribute(elemMap, tagName);
+		} else if (tagName == "h1" || tagName == "h2" || tagName == "h3" || tagName == "h4" || tagName == "h5" || tagName == "h6") {
+			checkForAttribute(elemMap, tagName);
 		} else {
 			elemMap["matchStr"] = elemMap["textContent"];
 			checkForAttribute(elemMap, tagName);

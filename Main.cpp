@@ -32,8 +32,8 @@ typedef std::unordered_map<std::string, std::string> StringMap;
 void cwd();
 string getHeadingLevel(StringMap&);
 void handleElemMatch(string, int, smatch, regex, StringMap&, map<int, string>&, std::string);
-void checkRegexAndUpdate(StringMap &elemMap, std::string line, std::smatch match, std::regex re, std::string key);
-
+void checkRegexAndUpdate(StringMap&, std::string, std::smatch, std::regex, std::string, int=0);
+void replaceAnchor(std::string&, const std::string&, const std::string&);
 
 int main() {
 
@@ -176,28 +176,17 @@ int main() {
 	return 0;
 }
 
-void checkRegexAndUpdate(StringMap &elemMap, std::string line, std::smatch match, std::regex re, std::string key) {
-	if (regex_search(line, match, re)) {
-		elemMap[key] = match[0];
-	}
-}
-
 void handleElemMatch(string line, int lineNum, std::smatch match, regex re, StringMap& elemMap, map<int, string>& lineMap, string htmlTag) {
-	// check what kind of element is matched and handle accordingly
 	if (regex_search(line, match, re)) {
 		if (htmlTag == "heading") {
 			regex heading_level_regex("^[\\#{1-6}]+");
 			regex heading_text_wattr_regex("\\#([^#]*)\\[");
 			regex heading_text_wout_attr_re("^\\#{1,6}.*");
-
 			elemMap["matchStr"] = match[0];
 
 			checkRegexAndUpdate(elemMap, line, match, heading_level_regex, "headingLevel");
 			checkRegexAndUpdate(elemMap, line, match, heading_text_wout_attr_re, "textContent");
-
-			if (std::regex_search(line, match, heading_text_wattr_regex)) {
-				elemMap["textContent"] = match[1];
-			}
+			checkRegexAndUpdate(elemMap, line, match, heading_text_wattr_regex, "textContent", 1);
 
 			Element heading(elemMap, getHeadingLevel(elemMap));
 			lineMap[lineNum] = heading.create();
@@ -233,60 +222,33 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 				lineMap[lineNum] = "\t" + li.create();
 			}
 		}
-		// todo: handle multiple links in a single/multi-line go
 		else if (htmlTag == "a") {
 			regex element_attr_regex("\\[([^\\[]*)\\]");
 			regex element_link_href_regex("\\((.+?)\\)");
 			regex anchor_element_regex("\\[.+?\\w\\].+?.\\)");
-			string linkName = "";
-			string linkHref = "";
+			string linkName, linkHref = "";
 			string::const_iterator searchStart(line.cbegin());
 			smatch matched;
 			vector<string> links;
-			regex bracket_or_paren_reg("[\\[|\\]|\\(|\\)]");
-
 			queue<string> q;
+			std::string lineCopy = line;
 
 			// iterate over the line while regex_search'ing (account for a line having multiple links)
 			while (regex_search(searchStart, line.cend(), matched, anchor_element_regex)) {
-				cout << (searchStart == line.cbegin() ? "" : " ") << "MATcH: " << matched[0] << endl;
 				searchStart = matched.suffix().first;
 				string anchor = matched[0];
 				q.push(anchor);
-
 				while (!q.empty()) {
-					string mdAnchor = q.front();
+					string a = q.front();
 					q.pop();
-
-					std::cout << mdAnchor << std::endl;
-
-					if (regex_search(anchor, match, element_attr_regex)) {
-						linkName = match[1];
-					}
-
-					if (regex_search(anchor, match, element_link_href_regex)) {
-						linkHref = match[1];
-					}
-
+					if (regex_search(a, match, element_attr_regex)) linkName = match[1];
+					if (regex_search(a, match, element_link_href_regex)) linkHref = match[1];
 					elemMap["textContent"] = linkName + " [href=" + linkHref + "]";
-
-					Element anchor(elemMap, "a");
-
-					// add constructed <a> elements to list of links to use in replacements
-					links.push_back(anchor.create());
+					Element link(elemMap, "a");
+					replaceAnchor(lineCopy, a, link.create());
 				}
 			}
-			std::cout << "Links" << std::endl;
-			std::string s = "";
-			for (auto l : links) {
-				cout << "link: " << l << endl;
-//				s += regex_replace(line, anchor_element_regex, l);
-
-			}
-			lineMap[lineNum] = "<p>" + s + "</p>";
-
-			Element anchor(elemMap, "a");
-			lineMap[lineNum] = "<p>" + regex_replace(line, anchor_element_regex, anchor.create()) + "</p>";
+			lineMap[lineNum] = "<p>" + lineCopy + "</p>";
 		}
 		else if (htmlTag == "img") {
 			regex element_attr_regex("\\[([^\\[]*)\\]");
@@ -318,6 +280,19 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 		} else {
 			elemMap["matchStr"] = "";
 		}
+	}
+}
+
+void replaceAnchor(std::string& str, const std::string& anchor, const std::string& replacement) {
+	std::size_t startIdx = str.find(anchor);
+	if (startIdx == std::string::npos) return;
+	str.replace(startIdx, anchor.length(), replacement);
+	return;
+}
+
+void checkRegexAndUpdate(StringMap &elemMap, std::string line, std::smatch match, std::regex re, std::string key, int n) {
+	if (regex_search(line, match, re)) {
+		elemMap[key] = match[n];
 	}
 }
 

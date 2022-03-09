@@ -1,8 +1,28 @@
 # mdparse
 A Markdown parser written in C++ to convert Markdown files to HTML. The parser supports setting element attributes inline within Markdown files for certain elements. docs are in progress
 
-## Example
-The following Markdown:
+## Usage
+Provide a input Markdown file path i.e. `./src/test-file.md` and the utility will generate and the resultant HTML file at the given output path.
+
+Two command line arguments must be specified:
+
+1. Input file path. (type `char*`)
+2. Output file path. (type `char*`) (default: .html extension added to input path)
+
+```
+g++ Main.cpp -o Main
+./Main input-file.md output-file
+```
+
+or
+
+```
+make Main
+./Main input-file.md output-file
+```
+
+## What does it do?
+The parser will accept an input Markdown file like shown below:
 
 ```md
 # Hello World! [class=greeting]
@@ -24,7 +44,7 @@ Hello, World [test](t.com) and this is another [link](f.com) with more text afte
 3. item three
 ```
 
-will be transformed to:
+and will be transform the Markdown to HTML:
 
 ```html
 <h1 class="greeting">Hello World!</h1>
@@ -48,19 +68,6 @@ will be transformed to:
     <li class="item-two">item two</li>
     <li>item three</li>
 </ol>
-```
-
-## Usage
-Provide a input Markdown file path i.e. `./src/test-file.md` and the utility will generate and the resultant HTML file at the given output path.
-
-Two command line arguments must be specified:
-
-1. Input file path. (type `char*`)
-2. Output file path. (type `char*`) (default: .html extension added to input path)
-
-```
-g++ Main.cpp -o Main
-./Main input-file.md output-file
 ```
 
 ## Resources

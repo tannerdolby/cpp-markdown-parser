@@ -117,4 +117,10 @@ public:
 	        }
 	    }
 	}
+
+	void setHeadingLevels(std::unordered_set<std::string>& headingLevels) {
+	    for (int i=1; i < 7; i++) {
+	    	headingLevels.insert("h" + std::to_string(i));
+	    }
+	}
 };

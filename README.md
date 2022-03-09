@@ -22,7 +22,7 @@ make Main
 ```
 
 ## What does it do?
-The parser will accept an input Markdown file like shown below:
+The parser will accept an input Markdown file:
 
 ```md
 # Hello World! [class=greeting]
@@ -44,7 +44,7 @@ Hello, World [test](t.com) and this is another [link](f.com) with more text afte
 3. item three
 ```
 
-and will be transform the Markdown to HTML:
+and will transform the Markdown to HTML:
 
 ```html
 <h1 class="greeting">Hello World!</h1>

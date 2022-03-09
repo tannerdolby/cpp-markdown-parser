@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <regex>
-#include "Helpers.h"
+#include "helpers.h"
 
 std::string& ltrim(std::string&, const char* = " \t\n\r\f\v");
 std::string& rtrim(std::string&, const char* = " \t\n\r\f\v");

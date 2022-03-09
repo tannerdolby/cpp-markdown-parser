@@ -2,12 +2,12 @@
 A Markdown parser written in C++ to convert Markdown files to HTML. The parser supports setting element attributes inline within Markdown files for certain elements. docs are in progress
 
 ## Usage
-Provide a input Markdown file path i.e. `./src/test-file.md` and the utility will generate and the resultant HTML file at the given output path.
+Provide an input Markdown file path and the parser will generate a resultant HTML file at the given output path.
 
 Two command line arguments must be specified:
 
-1. Input file path. (type `char*`)
-2. Output file path. (type `char*`) (default: .html extension added to input path)
+1. Input file path. for example: ./src/foo.md
+2. Output file path. for example: ./src/new-foo default: ./src/foo.html (default: .html extension added to input path)
 
 ```
 g++ Main.cpp -o Main

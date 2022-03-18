@@ -16,7 +16,6 @@ public:
 		outputPath = op;
 		numLines = 0;
 	}
-	;
 
 	void read() {
 		std::ifstream f;
@@ -58,7 +57,6 @@ public:
 
 		return fileVec;
 	}
-	;
 
 	char* getFilePath() {
 		return path;
@@ -88,7 +86,7 @@ public:
 		return numLines;
 	}
 
-	// wip
+	// todo: cleanup
 	void writeHTML(std::unordered_map<std::string, std::string> &lineMap,
 			std::ofstream &ofs) {
 		for (auto it = lineMap.begin(); it != lineMap.end(); ++it) {

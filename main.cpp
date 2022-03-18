@@ -31,8 +31,7 @@ typedef std::unordered_map<std::string, std::string> StringMap;
 // function prototypes
 void cwd();
 string getHeadingLevel(StringMap&);
-void handleElemMatch(string, int, smatch, regex, StringMap&, map<int, string>&,
-		std::string);
+void handleElemMatch(string, int, regex, StringMap&, map<int, string>&, std::string);
 void checkRegexAndUpdate(StringMap&, std::string, std::smatch, std::regex,
 		std::string, int = 0);
 void replaceAnchor(std::string&, const std::string&, const std::string&);
@@ -47,7 +46,6 @@ int main() {
 	regex text_no_attr_regex("([^#].*)");
 	regex single_line_code_regex("`([^`.][^`.]*)`");
 	regex paragraph_text_regex("(^[\\w].*\\[)");
-	;
 	regex empty_line_regex("^\\s*$");
 	regex element_sol_regex("\\<\\w+\\>");
 	regex element_eol_regex("\\<\\/.*\\>$");
@@ -92,24 +90,15 @@ int main() {
 	for (const auto &line : f.getRawVec()) {
 		lineNum += 1;
 		smatch match;
-		handleElemMatch(line, lineNum, match, empty_line_regex, elemMap,
-				lineMap, "");
-		handleElemMatch(line, lineNum, match, heading_regex, elemMap, lineMap,
-				"heading");
-		handleElemMatch(line, lineNum, match, paragraph_regex, elemMap, lineMap,
-				"p");
-		handleElemMatch(line, lineNum, match, anchor_element_regex, elemMap,
-				lineMap, "a");
-		handleElemMatch(line, lineNum, match, blockquote_regex, elemMap,
-				lineMap, "blockquote");
-		handleElemMatch(line, lineNum, match, single_line_code_regex, elemMap,
-				lineMap, "code");
-		handleElemMatch(line, lineNum, match, ordered_list_regex, elemMap,
-				lineMap, "ol");
-		handleElemMatch(line, lineNum, match, unordered_list_regex, elemMap,
-				lineMap, "ul");
-		handleElemMatch(line, lineNum, match, img_element_regex, elemMap,
-				lineMap, "img");
+		handleElemMatch(line, lineNum, empty_line_regex, elemMap, lineMap, "");
+		handleElemMatch(line, lineNum, heading_regex, elemMap, lineMap, "heading");
+		handleElemMatch(line, lineNum, paragraph_regex, elemMap, lineMap, "p");
+		handleElemMatch(line, lineNum, anchor_element_regex, elemMap, lineMap, "a");
+		handleElemMatch(line, lineNum, blockquote_regex, elemMap, lineMap, "blockquote");
+		handleElemMatch(line, lineNum, single_line_code_regex, elemMap, lineMap, "code");
+		handleElemMatch(line, lineNum, ordered_list_regex, elemMap, lineMap, "ol");
+		handleElemMatch(line, lineNum, unordered_list_regex, elemMap, lineMap, "ul");
+		handleElemMatch(line, lineNum, img_element_regex, elemMap, lineMap, "img");
 		// todo: multi-line code snippets (<pre> + nested <code>)
 		// todo: reference links [1]: https://google.com or [google]: https://google.com
 	}
@@ -198,8 +187,9 @@ int main() {
 	return 0;
 }
 
-void handleElemMatch(string line, int lineNum, std::smatch match, regex re,
+void handleElemMatch(string line, int lineNum, regex re,
 		StringMap &elemMap, map<int, string> &lineMap, string htmlTag) {
+	smatch match;
 	if (regex_search(line, match, re)) {
 		if (htmlTag == "heading") {
 			regex heading_level_regex("^[\\#{1-6}]+");

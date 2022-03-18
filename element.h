@@ -71,7 +71,6 @@ public:
 			if (elemAttrKeys.size() != elemAttrVals.size()) {
 				perror("Attribute mismatch! A name=value pair is incomplete.");
 			}
-			;
 
 			for (int j = 0; j < elemAttrKeys.size(); j++) {
 				if (elemAttrKeys.size() >= 2 || (j == 0 || j % 2 == 0)) {

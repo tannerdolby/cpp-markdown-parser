@@ -88,8 +88,6 @@ int main() {
 	// Iterate each line of raw text read from the input file
 	// and match lines that need to undergo transformation
 	for (const auto &line : f.getRawVec()) {
-		lineNum += 1;
-		smatch match;
 		handleElemMatch(line, lineNum, empty_line_regex, elemMap, lineMap, "");
 		handleElemMatch(line, lineNum, heading_regex, elemMap, lineMap, "heading");
 		handleElemMatch(line, lineNum, paragraph_regex, elemMap, lineMap, "p");
@@ -101,6 +99,7 @@ int main() {
 		handleElemMatch(line, lineNum, img_element_regex, elemMap, lineMap, "img");
 		// todo: multi-line code snippets (<pre> + nested <code>)
 		// todo: reference links [1]: https://google.com or [google]: https://google.com
+		lineNum++;
 	}
 
 	cout << "Printing Ordered Map" << endl;

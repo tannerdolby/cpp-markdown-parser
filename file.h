@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 class File {
+private:
 	char *path;
 	char *outputPath;
 	std::string raw, html;
@@ -10,7 +11,12 @@ class File {
 	std::vector<std::string> linesRaw;
 	std::vector<std::string> linesHtml;
 public:
-	File(char *f, char *op) { path = f; outputPath = op; numLines = 0; };
+	File(char *f, char *op) {
+		path = f;
+		outputPath = op;
+		numLines = 0;
+	}
+	;
 
 	void read() {
 		std::ifstream f;
@@ -46,12 +52,13 @@ public:
 
 			// Open the output file and truncate previous files contents if it already exists
 			std::ofstream ofs;
-			char* outputPath = "";
+			char *outputPath = "";
 			ofs.open(f.outputPath, std::ios_base::ate);
 		}
 
 		return fileVec;
-	};
+	}
+	;
 
 	char* getFilePath() {
 		return path;
@@ -82,12 +89,13 @@ public:
 	}
 
 	// wip
-	void writeHTML(std::unordered_map<std::string, std::string> &lineMap, std::ofstream &ofs) {
+	void writeHTML(std::unordered_map<std::string, std::string> &lineMap,
+			std::ofstream &ofs) {
 		for (auto it = lineMap.begin(); it != lineMap.end(); ++it) {
-			std::cout << it -> first;
-			std::cout << ": " << it -> second << std::endl;
+			std::cout << it->first;
+			std::cout << ": " << it->second << std::endl;
 			// write to output file stream e.g. resultant HTML file
-			ofs << it -> second << std::endl;
+			ofs << it->second << std::endl;
 		}
 	}
 };

@@ -21,8 +21,8 @@
 #include <utility>
 #include <unordered_set>
 
-#include "Element.h"
-#include "File.h"
+#include "element.h"
+#include "file.h"
 
 using namespace std;
 
@@ -31,8 +31,10 @@ typedef std::unordered_map<std::string, std::string> StringMap;
 // function prototypes
 void cwd();
 string getHeadingLevel(StringMap&);
-void handleElemMatch(string, int, smatch, regex, StringMap&, map<int, string>&, std::string);
-void checkRegexAndUpdate(StringMap&, std::string, std::smatch, std::regex, std::string, int=0);
+void handleElemMatch(string, int, smatch, regex, StringMap&, map<int, string>&,
+		std::string);
+void checkRegexAndUpdate(StringMap&, std::string, std::smatch, std::regex,
+		std::string, int = 0);
 void replaceAnchor(std::string&, const std::string&, const std::string&);
 
 int main() {
@@ -44,7 +46,8 @@ int main() {
 	regex text_attr_regex("([^#].*\\[)");
 	regex text_no_attr_regex("([^#].*)");
 	regex single_line_code_regex("`([^`.][^`.]*)`");
-	regex paragraph_text_regex("(^[\\w].*\\[)");;
+	regex paragraph_text_regex("(^[\\w].*\\[)");
+	;
 	regex empty_line_regex("^\\s*$");
 	regex element_sol_regex("\\<\\w+\\>");
 	regex element_eol_regex("\\<\\/.*\\>$");
@@ -89,94 +92,114 @@ int main() {
 	for (const auto &line : f.getRawVec()) {
 		lineNum += 1;
 		smatch match;
-		handleElemMatch(line, lineNum, match, empty_line_regex, elemMap, lineMap, "");
-		handleElemMatch(line, lineNum, match, heading_regex, elemMap, lineMap, "heading");
-		handleElemMatch(line, lineNum, match, paragraph_regex, elemMap, lineMap, "p");
-		handleElemMatch(line, lineNum, match, anchor_element_regex, elemMap, lineMap, "a");
-		handleElemMatch(line, lineNum, match, blockquote_regex, elemMap, lineMap, "blockquote");
-		handleElemMatch(line, lineNum, match, single_line_code_regex, elemMap, lineMap, "code");
-		handleElemMatch(line, lineNum, match, ordered_list_regex, elemMap, lineMap, "ol");
-		handleElemMatch(line, lineNum, match, unordered_list_regex, elemMap, lineMap, "ul");
-		handleElemMatch(line, lineNum, match, img_element_regex, elemMap, lineMap, "img");
+		handleElemMatch(line, lineNum, match, empty_line_regex, elemMap,
+				lineMap, "");
+		handleElemMatch(line, lineNum, match, heading_regex, elemMap, lineMap,
+				"heading");
+		handleElemMatch(line, lineNum, match, paragraph_regex, elemMap, lineMap,
+				"p");
+		handleElemMatch(line, lineNum, match, anchor_element_regex, elemMap,
+				lineMap, "a");
+		handleElemMatch(line, lineNum, match, blockquote_regex, elemMap,
+				lineMap, "blockquote");
+		handleElemMatch(line, lineNum, match, single_line_code_regex, elemMap,
+				lineMap, "code");
+		handleElemMatch(line, lineNum, match, ordered_list_regex, elemMap,
+				lineMap, "ol");
+		handleElemMatch(line, lineNum, match, unordered_list_regex, elemMap,
+				lineMap, "ul");
+		handleElemMatch(line, lineNum, match, img_element_regex, elemMap,
+				lineMap, "img");
 		// todo: multi-line code snippets (<pre> + nested <code>)
 		// todo: reference links [1]: https://google.com or [google]: https://google.com
 	}
 
 	cout << "Printing Ordered Map" << endl;
 	map<int, string>::iterator mapItr;
-	for (int i = 1; i < lineMap.size()-1; i++) {
+	for (int i = 1; i < lineMap.size() - 1; i++) {
 		cout << i << ": " << lineMap[i] << endl;
 		bool isPrevLineCompleted = false;
-		string prevLine = lineMap[i-1];
+		string prevLine = lineMap[i - 1];
 		string currLine = lineMap[i];
-		string nextLine = lineMap[i+1];
+		string nextLine = lineMap[i + 1];
 		smatch match;
-		bool isCurrLineFullPTag = (regex_search(currLine, match, element_p_sol_regex) &&
-		                            regex_search(currLine, match, element_p_eol_regex));
+		bool isCurrLineFullPTag = (regex_search(currLine, match,
+				element_p_sol_regex)
+				&& regex_search(currLine, match, element_p_eol_regex));
 
 		/* Refactor all this conditional logic */
 		// handle formatting ordered/unordered lists
-		if (regex_search(currLine, match, ol_or_ul_regex) && regex_search(nextLine, match, ol_or_ul_regex)) {
-		    elemMap["textContent"] =  match.suffix();
+		if (regex_search(currLine, match, ol_or_ul_regex)
+				&& regex_search(nextLine, match, ol_or_ul_regex)) {
+			elemMap["textContent"] = match.suffix();
 		}
 		// insert closing list elements
 		if (regex_search(currLine, match, ol_or_ul_regex)) {
-		    elemMap["listType"] = static_cast<string>(match[0]).insert(1, 1, '/');
+			elemMap["listType"] = static_cast<string>(match[0]).insert(1, 1,
+					'/');
 		}
 		// check if the current line is the last <li>
 		// element in a unordered or ordered list and close the tag
-		if ((regex_search(currLine, match, li_wattr_regex) && nextLine == "") ||
-		    (regex_search(currLine, match, li_sol_regex) && nextLine == "")) {
-		    lineMap[i] += "\n" + elemMap["listType"];
+		if ((regex_search(currLine, match, li_wattr_regex) && nextLine == "")
+				|| (regex_search(currLine, match, li_sol_regex)
+						&& nextLine == "")) {
+			lineMap[i] += "\n" + elemMap["listType"];
 		}
 		// single list item ul or ol
 		if (regex_search(currLine, match, ol_or_ul_regex) && nextLine == "") {
-		    lineMap[i] += "\n" + elemMap["listType"];
+			lineMap[i] += "\n" + elemMap["listType"];
 		}
 		// Remove opening and closing <p>,</p> tags for text
 		// in between the start and end in a multi-line paragraph block
-		if (regex_search(nextLine, match, element_p_sol_regex)&& isCurrLineFullPTag && nextLine != "") {
-		    lineMap[i] = regex_replace(regex_replace(currLine, element_p_eol_regex, ""), element_p_sol_regex, "");
+		if (regex_search(nextLine, match, element_p_sol_regex)
+				&& isCurrLineFullPTag && nextLine != "") {
+			lineMap[i] = regex_replace(
+					regex_replace(currLine, element_p_eol_regex, ""),
+					element_p_sol_regex, "");
 		}
 		// Remove closing </p> tag on first line in multi-line paragraph block
-		if (regex_search(currLine, match, element_p_sol_regex) && prevLine == "" && nextLine != "") {
-		    lineMap[i] = regex_replace(currLine, element_p_eol_regex, "");
+		if (regex_search(currLine, match, element_p_sol_regex) && prevLine == ""
+				&& nextLine != "") {
+			lineMap[i] = regex_replace(currLine, element_p_eol_regex, "");
 		}
 		// Remove starting <p> tag on last line in multi-line parapgraph block
-		if (regex_search(currLine, match, element_p_sol_regex) && prevLine != "" && nextLine == "") {
-		    lineMap[i] = regex_replace(currLine, element_p_sol_regex, "");
+		if (regex_search(currLine, match, element_p_sol_regex) && prevLine != ""
+				&& nextLine == "") {
+			lineMap[i] = regex_replace(currLine, element_p_sol_regex, "");
 		}
 
 		// if line-1 is a completed line e.g. <h2 class="foo">hi there</h2>
 		// its not involved in a multi-line <p> tag
 		smatch match_helper;
 
-		if (
-			regex_search(lineMap[i-1], match_helper, element_sol_regex) &&
-		    regex_search(lineMap[i-1], match_helper, element_eol_regex)
-		) {
-		    isPrevLineCompleted = true;
+		if (regex_search(lineMap[i - 1], match_helper, element_sol_regex)
+				&& regex_search(lineMap[i - 1], match_helper,
+						element_eol_regex)) {
+			isPrevLineCompleted = true;
 		}
 
-		if (!isPrevLineCompleted && regex_search(lineMap[i-1], match_helper, paragraph_regex)) {
-		    string prevLineText = match_helper[0];
-		    string currLineText = lineMap[i];
-		    elemMap["textContent"] = prevLineText + currLineText;
+		if (!isPrevLineCompleted
+				&& regex_search(lineMap[i - 1], match_helper,
+						paragraph_regex)) {
+			string prevLineText = match_helper[0];
+			string currLineText = lineMap[i];
+			elemMap["textContent"] = prevLineText + currLineText;
 		}
 	}
 
 	cout << "Printing Updated Map" << endl;
 	for (auto it = lineMap.begin(); it != lineMap.end(); ++it) {
-		cout << it -> first;
-		cout << ": " << it -> second << endl;
+		cout << it->first;
+		cout << ": " << it->second << endl;
 		// write to output file stream e.g. resultant HTML file
-		ofs << it -> second << endl;
+		ofs << it->second << endl;
 	}
 
 	return 0;
 }
 
-void handleElemMatch(string line, int lineNum, std::smatch match, regex re, StringMap& elemMap, map<int, string>& lineMap, string htmlTag) {
+void handleElemMatch(string line, int lineNum, std::smatch match, regex re,
+		StringMap &elemMap, map<int, string> &lineMap, string htmlTag) {
 	if (regex_search(line, match, re)) {
 		if (htmlTag == "heading") {
 			regex heading_level_regex("^[\\#{1-6}]+");
@@ -184,45 +207,44 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 			regex heading_text_wout_attr_re("^\\#{1,6}.*");
 			elemMap["matchStr"] = match[0];
 
-			checkRegexAndUpdate(elemMap, line, match, heading_level_regex, "headingLevel");
-			checkRegexAndUpdate(elemMap, line, match, heading_text_wout_attr_re, "textContent");
-			checkRegexAndUpdate(elemMap, line, match, heading_text_wattr_regex, "textContent", 1);
+			checkRegexAndUpdate(elemMap, line, match, heading_level_regex,
+					"headingLevel");
+			checkRegexAndUpdate(elemMap, line, match, heading_text_wout_attr_re,
+					"textContent");
+			checkRegexAndUpdate(elemMap, line, match, heading_text_wattr_regex,
+					"textContent", 1);
 
 			Element heading(elemMap, getHeadingLevel(elemMap));
 			lineMap[lineNum] = heading.create();
-		}
-		else if (htmlTag == "p") {
+		} else if (htmlTag == "p") {
 			regex paragraph_regex("^\\w.*");
 			elemMap["textContent"] = match[0];
 			Element paragraph(elemMap, "p");
 			line = regex_replace(line, paragraph_regex, paragraph.create());
 			lineMap[lineNum] = line;
-		}
-		else if (htmlTag == "ol") {
+		} else if (htmlTag == "ol") {
 			regex re("\\d\\.\\s");
 			elemMap["textContent"] = regex_replace(line, re, "");
 			elemMap["listType"] = htmlTag;
-			if (lineMap[lineNum-1] == "") {
+			if (lineMap[lineNum - 1] == "") {
 				Element li(elemMap, "li");
-				lineMap[lineNum] =  "<ol>\n\t" + li.create();
+				lineMap[lineNum] = "<ol>\n\t" + li.create();
 			} else {
 				Element li(elemMap, "li");
 				lineMap[lineNum] = "\t" + li.create();
 			}
-		}
-		else if (htmlTag == "ul") {
+		} else if (htmlTag == "ul") {
 			regex re("\\-\\s");
 			elemMap["textContent"] = regex_replace(line, re, "");
 			elemMap["listType"] = htmlTag;
-			if (lineMap[lineNum-1] == "") {
+			if (lineMap[lineNum - 1] == "") {
 				Element li(elemMap, "li");
 				lineMap[lineNum] = "<ul>\n\t" + li.create();
 			} else {
 				Element li(elemMap, "li");
 				lineMap[lineNum] = "\t" + li.create();
 			}
-		}
-		else if (htmlTag == "a") {
+		} else if (htmlTag == "a") {
 			regex element_attr_regex("\\[([^\\[]*)\\]");
 			regex element_link_href_regex("\\((.+?)\\)");
 			regex anchor_element_regex("\\[.+?\\w\\].+?.\\)");
@@ -234,23 +256,26 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 			std::string lineCopy = line;
 
 			// iterate over the line while regex_search'ing (account for a line having multiple links)
-			while (regex_search(searchStart, line.cend(), matched, anchor_element_regex)) {
+			while (regex_search(searchStart, line.cend(), matched,
+					anchor_element_regex)) {
 				searchStart = matched.suffix().first;
 				string anchor = matched[0];
 				q.push(anchor);
 				while (!q.empty()) {
 					string a = q.front();
 					q.pop();
-					if (regex_search(a, match, element_attr_regex)) linkName = match[1];
-					if (regex_search(a, match, element_link_href_regex)) linkHref = match[1];
-					elemMap["textContent"] = linkName + " [href=" + linkHref + "]";
+					if (regex_search(a, match, element_attr_regex))
+						linkName = match[1];
+					if (regex_search(a, match, element_link_href_regex))
+						linkHref = match[1];
+					elemMap["textContent"] = linkName + " [href=" + linkHref
+							+ "]";
 					Element link(elemMap, "a");
 					replaceAnchor(lineCopy, a, link.create());
 				}
 			}
 			lineMap[lineNum] = "<p>" + lineCopy + "</p>";
-		}
-		else if (htmlTag == "img") {
+		} else if (htmlTag == "img") {
 			regex element_attr_regex("\\[([^\\[]*)\\]");
 			regex element_link_href_regex("\\(([^.].*\\w)\\)");
 			string altText = "", imgSrc = "";
@@ -266,14 +291,13 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 			elemMap["textContent"] = "";
 			Element img(elemMap, htmlTag);
 			lineMap[lineNum] = img.create();
-		}
-		else if (htmlTag == "blockquote") {
+		} else if (htmlTag == "blockquote") {
 			regex re("\\>\\s");
-			elemMap["textContent"] = regex_replace(static_cast<string>(match[0]), re, "");
+			elemMap["textContent"] = regex_replace(
+					static_cast<string>(match[0]), re, "");
 			Element blockquote(elemMap, htmlTag);
 			lineMap[lineNum] = blockquote.create();
-		}
-		else if (htmlTag == "code") {
+		} else if (htmlTag == "code") {
 			elemMap["textContent"] = match[1];
 			Element code(elemMap, htmlTag);
 			lineMap[lineNum] = code.create();
@@ -283,14 +307,17 @@ void handleElemMatch(string line, int lineNum, std::smatch match, regex re, Stri
 	}
 }
 
-void replaceAnchor(std::string& str, const std::string& anchor, const std::string& replacement) {
+void replaceAnchor(std::string &str, const std::string &anchor,
+		const std::string &replacement) {
 	std::size_t startIdx = str.find(anchor);
-	if (startIdx == std::string::npos) return;
+	if (startIdx == std::string::npos)
+		return;
 	str.replace(startIdx, anchor.length(), replacement);
 	return;
 }
 
-void checkRegexAndUpdate(StringMap &elemMap, std::string line, std::smatch match, std::regex re, std::string key, int n) {
+void checkRegexAndUpdate(StringMap &elemMap, std::string line,
+		std::smatch match, std::regex re, std::string key, int n) {
 	if (regex_search(line, match, re)) {
 		elemMap[key] = match[n];
 	}
@@ -299,24 +326,24 @@ void checkRegexAndUpdate(StringMap &elemMap, std::string line, std::smatch match
 string getHeadingLevel(unordered_map<string, string> &elemMap) {
 	string headingLevel = "";
 	switch (elemMap["headingLevel"].size()) {
-		case 1:
-			headingLevel = "1";
-			break;
-	    case 2:
-	        headingLevel = "2";
-	        break;
-	    case 3:
-	        headingLevel = "3";
-	        break;
-	    case 4:
-	        headingLevel = "4";
-	        break;
-	    case 5:
-	        headingLevel = "5";
-	        break;
-	    case 6:
-	        headingLevel = "6";
-	        break;
+	case 1:
+		headingLevel = "1";
+		break;
+	case 2:
+		headingLevel = "2";
+		break;
+	case 3:
+		headingLevel = "3";
+		break;
+	case 4:
+		headingLevel = "4";
+		break;
+	case 5:
+		headingLevel = "5";
+		break;
+	case 6:
+		headingLevel = "6";
+		break;
 	}
 	return "h" + headingLevel;
 }

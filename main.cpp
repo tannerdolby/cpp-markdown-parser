@@ -36,7 +36,7 @@ void checkRegexAndUpdate(StringMap&, std::string, std::smatch, std::regex,
 		std::string, int = 0);
 void replaceAnchor(std::string&, const std::string&, const std::string&);
 
-int main() {
+int main(int argc, char *argv[]) {
 
 	// regular expressions for matching Markdown syntax
 	regex heading_regex("^#{1,6}\\s\\w+.*");
@@ -62,15 +62,16 @@ int main() {
 	regex anchor_element_regex("([^!|^\\w]\\[.+?\\))|^\\[.+?\\)");
 	regex img_element_regex("(!\\[.+?\\])\\(.+?\\)");
 
-	char path[] = "./src/test-file.md";
-	char outPath[] = "./src/test-file.html";
+//	char path[] = "./src/test-file.md";
+//	char outPath[] = "./src/test-file.html";
 
-	// construct a new input file instance
-	File f(path, outPath);
+	// construct a new input `File` instance
+	File f(argv[1], argv[2]);
 
 	// Read the file and store contents in the
 	// class fields of File instance
-	f.read();
+	std::string rawFileContents = f.read();
+
 	cout << "Raw file content: " << f.getRawText() << endl;
 	cout << "Number of Lines: " << f.getNumberOfLines() << endl;
 
@@ -97,9 +98,9 @@ int main() {
 		handleElemMatch(line, lineNum, ordered_list_regex, elemMap, lineMap, "ol");
 		handleElemMatch(line, lineNum, unordered_list_regex, elemMap, lineMap, "ul");
 		handleElemMatch(line, lineNum, img_element_regex, elemMap, lineMap, "img");
+		lineNum++;
 		// todo: multi-line code snippets (<pre> + nested <code>)
 		// todo: reference links [1]: https://google.com or [google]: https://google.com
-		lineNum++;
 	}
 
 	cout << "Printing Ordered Map" << endl;

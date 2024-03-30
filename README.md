@@ -6,19 +6,12 @@ Provide an input Markdown file path and the parser will generate a resultant HTM
 
 Two command line arguments must be specified:
 
-1. Input file path. for example: ./src/foo.md
-2. Output file path. for example: ./src/new-foo default: ./src/foo.html (default: .html extension added to input path)
+1. Input file path
+2. Output file path
 
 ```
-g++ Main.cpp -o Main
-./Main input-file.md output-file
-```
-
-or
-
-```
-make Main
-./Main input-file.md output-file
+make build
+./main input-file.md output-file.html
 ```
 
 ## What does it do?

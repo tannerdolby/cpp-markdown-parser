@@ -23,21 +23,28 @@ public:
 		elemMap = mp;
 	}
 
-	std::string create() {
+  bool isHeadingTag(std::string tagName) {
+    return (
+      tagName == "h1" ||
+      tagName == "h2" ||
+      tagName == "h3" ||
+      tagName == "h4" ||
+      tagName == "h5" ||
+      tagName == "h6"
+    );
+  }
 
+	std::string create() {
 		if (tagName == "img") {
-			// no text content
 			checkForAttribute(elemMap, tagName);
-		} else if (tagName == "h1" || tagName == "h2" || tagName == "h3"
-				|| tagName == "h4" || tagName == "h5" || tagName == "h6") {
+		} else if (isHeadingTag(tagName)) {
 			checkForAttribute(elemMap, tagName);
 		} else {
 			elemMap["matchStr"] = elemMap["textContent"];
 			checkForAttribute(elemMap, tagName);
 		}
 
-		std::vector<std::string> vecElemAttr, elemAttrKeys, elemAttrVals,
-				elementFields;
+		std::vector<std::string> vecElemAttr, elemAttrKeys, elemAttrVals, elementFields;
 		std::istringstream attributesLine(elemMap["attributes"]);
 		std::string l1, l2;
 		std::string element = "";
@@ -64,8 +71,7 @@ public:
 		}
 
 		if (elemMap["attributes"].empty()) {
-			element = "<" + tagName + ">" + trim(elemMap["textContent"]) + "</"
-					+ tagName + ">";
+			element = "<" + tagName + ">" + trim(elemMap["textContent"]) + "</" + tagName + ">";
 		} else {
 
 			if (elemAttrKeys.size() != elemAttrVals.size()) {
@@ -74,19 +80,16 @@ public:
 
 			for (int j = 0; j < elemAttrKeys.size(); j++) {
 				if (elemAttrKeys.size() >= 2 || (j == 0 || j % 2 == 0)) {
-					attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j]
-							+ '"' + " ";
+					attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j] + '"' + " ";
 				} else {
-					attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j]
-							+ '"';
+					attrStr += elemAttrKeys[j] + "=" + '"' + elemAttrVals[j] + '"';
 				};
 			}
 
 			if (tagName == "img") {
 				element = "<" + tagName + " " + trim(attrStr) + " />";
 			} else {
-				element = "<" + tagName + " " + trim(attrStr) + ">"
-						+ trim(elemMap["textContent"]) + "</" + tagName + ">";
+				element = "<" + tagName + " " + trim(attrStr) + ">" + trim(elemMap["textContent"]) + "</" + tagName + ">";
 			}
 		}
 
@@ -94,8 +97,9 @@ public:
 	}
 
 	void checkForAttribute(
-			std::unordered_map<std::string, std::string> &elemMap,
-			std::string htmlTag) {
+		  std::unordered_map<std::string, std::string> &elemMap,
+		  std::string htmlTag
+    ) {
 		std::regex element_attr_regex("\\[([^\\[]*)\\]");
 		std::regex element_link_href_regex("\\(([^.].*\\w)\\)");
 		std::smatch attr_match;
@@ -109,8 +113,7 @@ public:
 		if (elemMap["attributes"].empty()) {
 			if (htmlTag != "li") {
 				std::regex text_no_attr_regex("([^#].*)");
-				if (regex_search(elemMap["textContent"], attr_match,
-						text_no_attr_regex)) {
+				if (regex_search(elemMap["textContent"], attr_match, text_no_attr_regex)) {
 					elemMap["textContent"] = attr_match[0];
 				}
 			}

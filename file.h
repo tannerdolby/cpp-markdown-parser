@@ -26,7 +26,6 @@ public:
 
 		if (f.is_open()) {
 			while (getline(f, line)) {
-				std::cout << line << std::endl; // todo: remove
 				rawText += line + "\n";
 				lineCount++;
 				linesRaw.push_back(line);
@@ -53,7 +52,7 @@ public:
 
 			// Open the output file and truncate previous files contents if it already exists
 			std::ofstream ofs;
-			ofs.open(f.outputPath, std::ios_base::ate);
+			ofs.open(f.outputPath, std::ofstream::in);
 		}
 
 		return fileVec;
@@ -88,11 +87,8 @@ public:
 	}
 
 	// todo: cleanup
-	void writeHTML(std::unordered_map<std::string, std::string> &lineMap,
-			std::ofstream &ofs) {
+	void writeHTML(std::unordered_map<std::string, std::string> &lineMap, std::ofstream &ofs) {
 		for (auto it = lineMap.begin(); it != lineMap.end(); ++it) {
-			std::cout << it->first;
-			std::cout << ": " << it->second << std::endl;
 			// write to output file stream e.g. resultant HTML file
 			ofs << it->second << std::endl;
 		}

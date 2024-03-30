@@ -17,8 +17,8 @@ std::string& trim(std::string &s, const char *t) {
 	return ltrim(rtrim(s, t), t);
 }
 
-// get current working directory printed to std out
-void cwd() {
+// print current working directory to std out
+void printcwd() {
 	char* getcwd(char *buf, size_t size);
 	char cwd[256]; // 256 character limit max
 	if (getcwd(cwd, sizeof(cwd)) != NULL) {

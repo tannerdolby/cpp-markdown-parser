@@ -17,7 +17,7 @@ public:
 		numLines = 0;
 	}
 
-	void read() {
+	std::string read() {
 		std::ifstream f;
 		std::string rawText = "", line = "";
 		int lineCount = 0;
@@ -38,20 +38,21 @@ public:
 
 		raw = rawText;
 		numLines = lineCount;
+		return rawText;
 	}
 
 	std::vector<File> readFiles(std::vector<std::pair<char*, char*> > files) {
 		// todo: ["path1", "path2"] -> vector<File> and then write each output file
 		std::vector<File> fileVec;
-		for (auto fp : files) {
+		for (int i=0; i < files.size(); i++) {
+			std::pair<char*, char*> fp = files[i];
 			// create a new file instance then read file by file
 			File f(fp.first, fp.second);
 
-			// todo: do transformations
+			// todo: do any transformations?
 
 			// Open the output file and truncate previous files contents if it already exists
 			std::ofstream ofs;
-			char *outputPath = "";
 			ofs.open(f.outputPath, std::ios_base::ate);
 		}
 

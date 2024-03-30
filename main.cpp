@@ -29,7 +29,7 @@ using namespace std;
 typedef std::unordered_map<std::string, std::string> StringMap;
 
 // function prototypes
-void cwd();
+void printcwd();
 string getHeadingLevel(StringMap&);
 void handleElemMatch(string, int, regex, StringMap&, map<int, string>&, std::string);
 void checkRegexAndUpdate(StringMap&, std::string, std::smatch, std::regex,
@@ -76,11 +76,11 @@ int main(int argc, char *argv[]) {
 	cout << "Number of Lines: " << f.getNumberOfLines() << endl;
 
 	// Get current working directory
-	cwd();
+	printcwd();
 
 	// Open the output file for appending and truncate previous files contents if they already exist
 	ofstream ofs;
-	ofs.open(f.getFileOutPath(), ios_base::ate);
+	ofs.open(f.getFileOutPath(), std::ofstream::out | std::ofstream::ate);
 
 	map<int, string> lineMap;
 	unordered_map<string, string> elemMap;
@@ -314,26 +314,6 @@ void checkRegexAndUpdate(StringMap &elemMap, std::string line,
 }
 
 string getHeadingLevel(unordered_map<string, string> &elemMap) {
-	string headingLevel = "";
-	switch (elemMap["headingLevel"].size()) {
-	case 1:
-		headingLevel = "1";
-		break;
-	case 2:
-		headingLevel = "2";
-		break;
-	case 3:
-		headingLevel = "3";
-		break;
-	case 4:
-		headingLevel = "4";
-		break;
-	case 5:
-		headingLevel = "5";
-		break;
-	case 6:
-		headingLevel = "6";
-		break;
-	}
-	return "h" + headingLevel;
+	int level = elemMap["headingLevel"].size();
+	return "h" + std::to_string(level);
 }

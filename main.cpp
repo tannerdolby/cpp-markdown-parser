@@ -62,12 +62,13 @@ int main(int argc, char *argv[]) {
 	regex anchor_element_regex("([^!|^\\w]\\[.+?\\))|^\\[.+?\\)");
 	regex img_element_regex("(!\\[.+?\\])\\(.+?\\)");
 
-//	char path[] = "./src/test-file.md";
-//	char outPath[] = "./src/test-file.html";
-
 	// construct a new input `File` instance
+  // and use command line arguments when user
+  // executes the main file
 	File f(argv[1], argv[2]);
 
+  // Do we really want to do this?
+  // is the memory leak around this?
 	// Read the file and store contents in the
 	// class fields of File instance
 	std::string rawFileContents = f.read();
@@ -89,19 +90,23 @@ int main(int argc, char *argv[]) {
 	// Iterate each line of raw text read from the input file
 	// and match lines that need to undergo transformation
 	for (const auto &line : f.getRawVec()) {
+    cout << "line: " << line << endl;
 		handleElemMatch(line, lineNum, empty_line_regex, elemMap, lineMap, "");
 		handleElemMatch(line, lineNum, heading_regex, elemMap, lineMap, "heading");
-		handleElemMatch(line, lineNum, paragraph_regex, elemMap, lineMap, "p");
+    // TODO: Memory leak and segmentation faults from this <p> tag logic :/
+		// handleElemMatch(line, lineNum, paragraph_regex, elemMap, lineMap, "p");
 		handleElemMatch(line, lineNum, anchor_element_regex, elemMap, lineMap, "a");
 		handleElemMatch(line, lineNum, blockquote_regex, elemMap, lineMap, "blockquote");
 		handleElemMatch(line, lineNum, single_line_code_regex, elemMap, lineMap, "code");
 		handleElemMatch(line, lineNum, ordered_list_regex, elemMap, lineMap, "ol");
 		handleElemMatch(line, lineNum, unordered_list_regex, elemMap, lineMap, "ul");
 		handleElemMatch(line, lineNum, img_element_regex, elemMap, lineMap, "img");
+    // TODO: multi-line code snippets (<pre> + nested <code>)
+		// TODO: reference links [1]: https://google.com or [google]: https://google.com
 		lineNum++;
-		// todo: multi-line code snippets (<pre> + nested <code>)
-		// todo: reference links [1]: https://google.com or [google]: https://google.com
 	}
+
+  cout << "after parsing loop and logic" << endl;
 
 	cout << "Printing Ordered Map" << endl;
 	map<int, string>::iterator mapItr;
@@ -207,11 +212,14 @@ void handleElemMatch(string line, int lineNum, regex re,
 			Element heading(elemMap, getHeadingLevel(elemMap));
 			lineMap[lineNum] = heading.create();
 		} else if (htmlTag == "p") {
+      cout << "paragraph tag logic" << endl;
 			regex paragraph_regex("^\\w.*");
 			elemMap["textContent"] = match[0];
 			Element paragraph(elemMap, "p");
+      cout << "paragraph tag logic 2" << endl;
 			line = regex_replace(line, paragraph_regex, paragraph.create());
 			lineMap[lineNum] = line;
+      cout << "paragraph tag logic 2" << endl;
 		} else if (htmlTag == "ol") {
 			regex re("\\d\\.\\s");
 			elemMap["textContent"] = regex_replace(line, re, "");
@@ -300,8 +308,9 @@ void handleElemMatch(string line, int lineNum, regex re,
 void replaceAnchor(std::string &str, const std::string &anchor,
 		const std::string &replacement) {
 	std::size_t startIdx = str.find(anchor);
-	if (startIdx == std::string::npos)
+	if (startIdx == std::string::npos) {
 		return;
+  }
 	str.replace(startIdx, anchor.length(), replacement);
 	return;
 }

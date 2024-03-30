@@ -1,10 +1,10 @@
 # mdparse
-A Markdown parser written in C++ to convert Markdown files to HTML. The parser supports setting element attributes inline within Markdown files for certain elements. docs are in progress
+Markdown parser written in C++ to convert Markdown files to HTML. Working on adhering to the CommonMark spec. This parser supports setting element attributes inline within Markdown files for certain elements.
 
 ## Usage
 Provide an input Markdown file path and the parser will generate a resultant HTML file at the given output path.
 
-Two command line arguments must be specified:
+Two command line arguments must be specified when executing the main file:
 
 1. Input file path
 2. Output file path
@@ -64,5 +64,6 @@ and will transform the Markdown to HTML:
 ```
 
 ## Resources
+- [CommonMark Spec](https://github.com/commonmark/commonmark-spec)
 - [regex101](https://regex101.com)
 - [markdown-guide](https://about.gitlab.com/handbook/markdown-guide/)
